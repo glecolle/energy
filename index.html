@@ -203,6 +203,7 @@
                 divers_elec: {name: "Divers", unit: "kWh", type: "calc", formula: "total_elec - chauf_elec - ecs_hc", color: "#CC79A7"},
                 ratio_chauf_hc: {name: "Ratio chauffage HC", unit: "%", type: "calc", formula: "100 * chauf_hc / chauf_elec"},
                 ratio_divers_hc: {name: "Divers HC", unit: "%", type: "calc", formula: "100 * divers_elec / total_elec"},
+                ratio_total_hc: {name: "Total HC", unit: "%", type: "calc", formula: "100 * total_hc / total_elec"},
 
                 bois: {name: "Bois", unit: "kg",  type: "value", tokWh: 4.1, color: "#8B4513", dash: true},
                 chauf: {name: "Chauffage", unit: "kWh", type: "calc", formula: "chauf_elec + bois", color: "#D55E00"},
@@ -217,38 +218,42 @@
                 total: {name: "Total", unit: "kWh", type: "calc", formula: "total_elec+bois"}
             },
 
+            /**
+             * List of graphs to display.
+             */
             graphs: [
-                {title: "Évolution des consommations annuelles", unit: "kWh", series: ["total", "total_elec", "chauf", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
-                {title: "Évolution des prix annuels", unit: "kWh", series: ["total", "chauf", "ecs", "divers", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
-                {title: "Évolution des consommations mensuelles", unit: "kWh", series: ["chauf", "ecs_hc", "divers", "bois", "chauf_reg"], width: "100%", timeUnit: "month"},
+                {title: "Évolution des consommations annuelles", unit: "kWh", metrics: ["total", "total_elec", "chauf", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
+                {title: "Évolution des prix annuels", unit: "kWh", metrics: ["total", "chauf", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
+                {title: "Évolution des consommations mensuelles", unit: "kWh", metrics: ["chauf", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "100%", timeUnit: "month"},
             ],
 
+            /** List of table to display */
             tables: [
                 {title: "Années", timeUnit: "year", groups: [
                     {
                         name: "Total",
 
                         columns: [
-                            {name: "kWh", metric: "total"},
-                            {name: "kWh/m²", metric: "energie_surface"},
+                            {name: "kWh", metric: "total", tooltip: "Consommation totale d'énergie"},
+                            {name: "Ratio HC", metric: "ratio_total_hc", tooltip: "Utilisation d'électricité en heures creuses"},
                         ]
                     },
                     {
                         name: "Chauffage",
                         columns: [
-                            {name: "total", metric: "chauf"},
-                            {name: "élec", metric: "chauf_elec"},
-                            {name: "bois", metric: "bois"},
-                            {name: "prévision", metric: "chauf_reg"},
-                            {name: "kWh/m²", metric: "chauf_surface"},
-                            {name: "Ratio HC", metric: "ratio_chauf_hc"},
+                            {name: "Total", metric: "chauf", tooltip: "Électicité + bois"},
+                            {name: "Élec", metric: "chauf_elec", tooltip: "Consommation électrique associée au chauffage"},
+                            {name: "Bois", metric: "bois", tooltip: "Apport du bois comme chauffage"},
+                            {name: "Prévision", metric: "chauf_reg", tooltip: "Prévision du chauffage nécessaire en fonction des températures et de l'ensoleillement à partir de l'année de référence"},
+                            {name: "kWh/m²", metric: "chauf_surface", tooltip: "Chauffage total par unité de surface"},
+                            {name: "Ratio HC", metric: "ratio_chauf_hc", tooltip: "Pourcentage de l'énergie électrique utilisée sur les heures creuses"},
                         ]
                     },
                     {
                         name: "Divers",
                         columns: [
-                            {name: "kWh", metric: "divers_elec"},
-                            {name: "Ratio HC", metric: "ratio_divers_hc"},
+                            {name: "kWh", metric: "divers_elec", tooltip: "Cuisson, lave linge, aspirateur, réfrigérateur, éclairage, TV, appareils divers"},
+                            {name: "Ratio HC", metric: "ratio_divers_hc", tooltip: "Pourcentage d'utilisation en heures creuses"},
                         ]
                     },
                     {
@@ -261,8 +266,8 @@
                     {
                         name: "Meteo",
                         columns: [
-                            {name: "🌡", tooltip: "Degrés-jour-Unité, somme de températures en dessous de 18°C", metric: "dju"},
-                            {name: "☀", tooltip: "Nombre d'heures d'ensoleillement", metric: "enso"},
+                            {name: "🌡", metric: "dju", tooltip: "Degrés-jour-Unité, somme de températures en dessous de 18°C"},
+                            {name: "☀", metric: "enso", tooltip: "Nombre d'heures d'ensoleillement"},
                         ]
                     }
                 ]},
@@ -271,16 +276,29 @@
                         name: "Total",
                         columns: [
                             {name: "kWh", metric: "total"},
-                            {name: "kWh/m²", metric: "energie_surface"},
                         ]
                     },
                     {
                         name: "Chauffage",
                         columns: [
-                            {name: "élec", metric: "chauf_elec"},
-                            {name: "bois", metric: "bois"},
-                            {name: "total", metric: "chauf"},
-                            {name: "prévision", metric: "chauf_reg"},
+                            {name: "Élec", metric: "chauf_elec"},
+                            {name: "Bois", metric: "bois"},
+                            {name: "Total", metric: "chauf"},
+                            {name: "Prévision", metric: "chauf_reg"},
+                            {name: "kWh/j", metric: "chauf", data: "byDay"},
+                        ]
+                    },
+                    {
+                        name: "Divers",
+                        columns: [
+                            {name: "kWh", metric: "divers_elec", tooltip: "Cuisson, lave linge, aspirateur, réfrigérateur, éclairage, TV, appareils divers"},
+                        ]
+                    },
+                    {
+                        name: "Eau chaude",
+                        columns: [
+                            {name: "kWh", metric: "ecs_hc"},
+                            {name: "kWh/j", metric: "ecs_hc", data: "byDay"},
                         ]
                     },
                 ]},
@@ -462,14 +480,6 @@
 
                 this.update();
             }
-
-            remove(metric) {
-                this.total -= metric.total;
-                this.totalRaw -= metric.totalRaw;
-                this.days -= metric.days;
-                this.price -= metric.price;
-                this.update();
-            }
         }
 
         /**
@@ -482,6 +492,7 @@
             date;
             metrics; // {valeur1: Metric, valeur2: Metric}
             samples;
+            days;
 
             constructor(name, date, constants) {
                 this.name = name;
@@ -684,8 +695,9 @@
                     if (typeof valueModel.formula != "string") {
                         fail(`missing formula for ${name}, required for ${valueModel.type} type`);
                     }
-                    if (/^[\(\)]*\w([-+*/]\w+[\(\)]*)+$/.test(valueModel.formula)) {
-                        fail(`wrong formula format for ${name} with type ${valueModel.type}, got: ${valueModel.formula} expected (var_a+var_b)-var_c*var_d`);
+                    valueModel.formula = valueModel.formula.replace(/\s+/g, ""); //remove all spaces
+                    if (!/^[\(\)]*\w+([-+*/]\w+[\(\)]*)+$/.test(valueModel.formula)) {
+                        fail(`wrong formula format for varibale '${name}' with type '${valueModel.type}', got: ${valueModel.formula} expected something like: (var_a+var_b)-var_c*var_d`);
                     }
                 }
             }
@@ -1031,12 +1043,12 @@
             /**
              * Draw a graph using chart.js
              * On top, there is the title.
-             * Below, there a legend showing the series with their colors.
-             * Below, the graph panel with the requested series.
+             * Below, there a legend showing the metrics with their colors.
+             * Below, the graph panel with the requested metrics.
              * @param parentId add the graph inside this element
-             * @param graphModel the properties of the graph to display: {title: "Annual evolution", unit: "kWh", name: "Consumption", series: ["total", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"}
-             * series contains the list of names of metrics to display. For each serie, display the total value of the metric.
-             * @param valueModels describes values, used for its color and dash properties for drawing series
+             * @param graphModel the properties of the graph to display: {title: "Annual evolution", unit: "kWh", name: "Consumption", metrics: ["total", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"}
+             * metrics contains the list of names of metrics to display. For each serie, display the total value of the metric.
+             * @param valueModels describes values, used for its color and dash properties for drawing metrics
              * @param timeSpans are all timeSpans to use, containing the metrics for all variables
              */
             drawGraph(parentId, graphModel, valueModels, timeSpans) {
@@ -1055,9 +1067,11 @@
                 // Legend
                 const legend = document.createElement('div');
                 legend.className = 'graph-legend';
-                graphModel.series.forEach(serieName => {
-                    const model = valueModels[serieName];
-                    if (!model) return;
+                graphModel.metrics.forEach(metricName => {
+                    const model = valueModels[metricName];
+                    if (!model) {
+                        fail(`missing serie ${metricName} to build graph`);
+                    }
                     const color = model.color || '#6c757d';
 
                     const item = document.createElement('span');
@@ -1100,14 +1114,14 @@
                 }
 
                 // Build Chart.js datasets
-                const datasets = graphModel.series
-                    .filter(serieName => valueModels[serieName])
-                    .map(serieName => {
-                        const model = valueModels[serieName];
+                const datasets = graphModel.metrics
+                    .filter(metricName => valueModels[metricName])
+                    .map(metricName => {
+                        const model = valueModels[metricName];
                         const color = model.color || '#6c757d';
                         const dataset = {
                             label: model.name,
-                            data: sortedTimeSpans.map(ts => ts.metrics[serieName] ? ts.metrics[serieName].total : 0),
+                            data: sortedTimeSpans.map(ts => ts.metrics[metricName] ? ts.metrics[metricName].total : 0),
                             borderColor: color,
                             backgroundColor: color,
                             borderWidth: 2,
@@ -1250,7 +1264,7 @@
                             td.className = 'numeric';
                             const metric = ts.metrics[col.metric];
                             if (metric) {
-                                const v = metric.total;
+                                const v = metric[col.data ?? "total"];
                                 if (typeof v != "number" || Number.isNaN(v)) {
                                     console.error(`while drawing cell, got invalid value for ${col.metric} in metric: ${JSON.stringify(metric)}`);
                                 }
@@ -1306,7 +1320,7 @@
                         if (isNaN(v)) return;
 
                         const stop = range === 0 ? 0 : Math.round(100 * (1 - (v - min) / range));
-                        const transitionEnd = Math.min(stop + 4, 100);
+                        const transitionEnd = Math.min(stop + 3, 100);
                         cell.style.background = `linear-gradient(to right, transparent ${stop}%, ${color} ${transitionEnd}%)`;
                     });
                 }
@@ -1651,7 +1665,7 @@
             //console.log("assert ", value, "=", expected, "for test:", testName);
             switch (typeof expected) {
                 case "string":
-                case "bool":
+                case "boolean":
                     ok = value === expected;
                     break;
                 case "number":
