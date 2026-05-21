@@ -86,10 +86,10 @@
             {date:"2020-12-01", total_hc:11400, total_hp:11240, chauf_hc:16280, chauf_hp:19292, ev_hp:81, ev_hc:0, ecs_hc:7883.9, ecs_hp:0, bois:0, dju: 219.9, enso: 109.8},
             {date:"2020-11-01", total_hc:10921, total_hp:10815, chauf_hc:15977, chauf_hp:19057, ev_hp:78, ev_hc:0, ecs_hc:7773.79, ecs_hp:0, bois:0, dju: 166.6, enso: 96.5},
             {date:"2020-10-01", total_hc:10648, total_hp:10537, chauf_hc:15866, chauf_hp:18944, ev_hp:75, ev_hc:0, ecs_hc:7677.07, ecs_hp:0, bois:0, dju: 67.3, enso: 184.2},
-            {kWh_hp: /*HP*/0.1194*1.2+/*TCFE*/0.0099*1.2+/*CSPE*/0.0225*1.2, kWh_hc: /*HC*/0.08*1.2+/*TCFE*/0.0099*1.2+/*CSPE*/0.0225*1.2, abonnement: 11.09*1.055+27.02/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {kWh_hp: /*HP*/0.1194*1.2+/*TCFE*/0.0099*1.2+/*CSPE*/0.0225*1.2, kWh_hc: /*HC*/0.08*1.2+/*TCFE*/0.0099*1.2+/*CSPE*/0.0225*1.2, abonnement: 11.09*1.055+27.02/12*1.055, kg: 80/400, surface: 135, pers: 4},
             {date:"2020-09-01", total_hc:10495, total_hp:10402, chauf_hc:15866, chauf_hp:18944, ev_hp:72, ev_hc:0, ecs_hc:7586.71, ecs_hp:0, bois:0, dju: 34.5, enso: 214.5},
             {date:"2020-08-01", total_hc:10358, total_hp:10260, chauf_hc:15866, chauf_hp:18944, ev_hp:69, ev_hc:0, ecs_hc:7509.12, ecs_hp:0, bois:0, dju: 48.4, enso: 267},
-            {kWh_hp: /*HP*/0.09*1.2+/*TDCFE*/0.003273*1.2+/*TCCFE*/0.006545*1.2+/*CSPE*/0.0225*1.2, kWh_hc: /*HC*/0.0743*1.2+/*TDCFE*/0.003273*1.2+/*TCCFE*/0.006545*1.2+/*CSPE*/0.0225*1.2, abonnement: 11.95*1.055+6.03/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {kWh_hp: /*HP*/0.09*1.2+/*TDCFE*/0.003273*1.2+/*TCCFE*/0.006545*1.2+/*CSPE*/0.0225*1.2, kWh_hc: /*HC*/0.0743*1.2+/*TDCFE*/0.003273*1.2+/*TCCFE*/0.006545*1.2+/*CSPE*/0.0225*1.2, abonnement: 11.95*1.055+6.03/12*1.055, kg: 80/400, surface: 135, pers: 4},
             {date:"2020-07-01", total_hc:10261, total_hp:10165, chauf_hc:15866, chauf_hp:18944, ev_hp:66, ev_hc:0, ecs_hc:7458.13, ecs_hp:0, bois:0, dju: 70, enso: 176.3},
             {date:"2020-06-01", total_hc:10107, total_hp:10024, chauf_hc:15866, chauf_hp:18944, ev_hp:63, ev_hc:0, ecs_hc:7363.13, ecs_hp:0, bois:0, dju: 107.5, enso: 311.9},
             {date:"2020-05-01", total_hc:9941, total_hp:9872, chauf_hc:15866, chauf_hp:18944, ev_hp:60, ev_hc:0, ecs_hc:7257.2, ecs_hp:0, bois:0, dju: 139.3, enso: 224.2},
@@ -199,28 +199,28 @@
                 total_hp: {name: "Total heures pleines",   unit: "kWh", type: "index"},
                 total_hc: {name: "Total heures creuses",   unit: "kWh", type: "index"},
                 total_elec: {name: "Total élec.", unit: "kWh", type: "calc", formula: "total_hc + total_hp", color: "#000000"},
-                chauf_elec: {name: "Chauffage", unit: "kWh", type: "calc", formula: "chauf_hp + chauf_hc", color: "#D55E00"},
+                chauf_elec: {name: "Chauffage élec", unit: "kWh", type: "calc", formula: "chauf_hp + chauf_hc", color: "#F5AE00"},
                 divers_elec: {name: "Divers", unit: "kWh", type: "calc", formula: "total_elec - chauf_elec - ecs_hc", color: "#CC79A7"},
-                ratio_chauf_hc: {name: "Ratio chauffage HC", unit: "%", type: "calc", formula: "100 * chauf_hc / chauf_elec", color: "#CC79A7"},
-                ratio_divers_hc: {name: "Divers HC", unit: "%", type: "calc", formula: "100 * divers_elec / total_elec", color: "#CC79A7"},
+                ratio_chauf_hc: {name: "Ratio chauffage HC", unit: "%", type: "calc", formula: "100 * chauf_hc / chauf_elec"},
+                ratio_divers_hc: {name: "Divers HC", unit: "%", type: "calc", formula: "100 * divers_elec / total_elec"},
 
                 bois: {name: "Bois", unit: "kg",  type: "value", tokWh: 4.1, color: "#8B4513", dash: true},
-                chauf: {name: "Chauffage", unit: "kWh", type: "calc", formula: "chauf_elec + bois", color: "#CC79A7"},
-                chauf_surface: {name: "Chauffage/surface", unit: "kWh/m²", type: "calc", formula: "chauf / surface", color: "#CC79A7"},
+                chauf: {name: "Chauffage", unit: "kWh", type: "calc", formula: "chauf_elec + bois", color: "#D55E00"},
+                chauf_surface: {name: "Chauffage/surface", unit: "kWh/m²", type: "calc", formula: "chauf / surface"},
 
                 co2: {name: "CO₂", unit: "kg", type: "calc", formula: "total_elec*50"},
                 pers: {name: "Nombre de personnes", unit: "", type: "value"},
                 ecs_pers: {name: "ECS/pers", unit: "kWh", type: "calc", formula: "ecs_hc/pers"},
                 energie_surface: {name: "Élec/surface", unit: "kWh", type: "calc", formula: "(total_elec+bois)/surface"},
 
-                chauf_reg: {name:"Prévision chauffage", unit: "kWh", type: "reg", formula: "chauf=A*dju+B*enso+C", positive: true, color: "#B53E00"},
+                chauf_reg: {name:"Prévision chauffage", unit: "kWh", type: "reg", formula: "chauf=A*dju+B*enso+C", positive: true, color: "#B53E00", dash: true},
                 total: {name: "Total", unit: "kWh", type: "calc", formula: "total_elec+bois"}
             },
 
             graphs: [
-                {title: "Évolution des consommations annuelles", unit: "kWh", series: ["total", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
+                {title: "Évolution des consommations annuelles", unit: "kWh", series: ["total", "total_elec", "chauf", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
                 {title: "Évolution des prix annuels", unit: "kWh", series: ["total", "chauf", "ecs", "divers", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
-                {title: "Évolution des consommations mensuelles", unit: "kWh", series: ["total", "chauf", "ecs", "divers", "bois", "chauf_reg"], largeur: "50%", timeUnit: "month"},
+                {title: "Évolution des consommations mensuelles", unit: "kWh", series: ["chauf", "ecs_hc", "divers", "bois", "chauf_reg"], width: "100%", timeUnit: "month"},
             ],
 
             tables: [
@@ -245,13 +245,14 @@
                         ]
                     },
                     {
-                        name: "Eau chaude",
+                        name: "Divers",
                         columns: [
                             {name: "kWh", metric: "divers_elec"},
+                            {name: "Ratio HC", metric: "ratio_divers_hc"},
                         ]
                     },
                     {
-                        name: "Divers",
+                        name: "Eau chaude",
                         columns: [
                             {name: "kWh", metric: "ecs_hc"},
                             {name: "kWh/pers", metric: "ecs_pers"},
@@ -376,8 +377,9 @@
             margin-right: 2px;
         }
         .graph-legend-swatch.dash {
-            outline: 2px dashed currentColor;
             background-color: transparent;
+            border-top: 12px dotted currentColor;
+            height: 0;
         }
         .section-title {
             margin-top: 0;
@@ -749,6 +751,7 @@
                         lastFullYear = year;
                     }
                 }
+                console.log("last full year", lastFullYear);
 
                 // recompute calc values of years since calc values may not be calculated correctly this way (ratios, by example, cannot be added and neeed to be recomputed on year aggregation level)
                 for (const [year, ts] of Object.entries(years)) {
