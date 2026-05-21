@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Énergie</title>
+    <script>
+        let desc = {
+            valeurs: {
+                // clé : identifiant de la valeur du relevé dans "compteurs"
+                // nom : nom à afficher
+                // unité : unité de calcul et d'affichage
+                // type : "conso" est la valeur absolue consommée depuis le dernier relevé, "index" signifie que l'on relève une valeur qui augmente au fil du temps, la conso étant calculable en soustrayant la valeur précédente pour ce compteur,
+                //  - un tableau signifie que c'est une valeur calculée ["v1", "-v2", "-v3"] => valeur = v1-v2-v3 et si le tableau contient "=", on fera une régression annuelle sur les valeurs demandées
+                // hc : true si l'on doit faire une distinction heures pleines/heures creuses (les variables dans compteurs seront alors suffixées par _hc et _hp)
+                // tokWh : valeur pour la conversion de l'unité en kWh
+                // toCo2 : pour chaque kWh, quantité de Co2 émise en kg
+                // total : nom d'indicateur pour calculer le ratio par rapport au total, false pour ne pas calculer de ratio
+                // init : si un index est réinitialisé, on peut préciser chauf_hc_init: 250 pour reprendre 250 comme valeur précédente de compteur (fonctionne aussi dans hc/hp)
+                // prix : true pour calculer et afficher le prix pour cette valeur, si tableau, la valeur portant ce nom est ajoutée au prix de chaque échantillon (ex: part fixe abonnement)
+                // surface : calcule et affiche la quantité par unité de surface
+                // pers : calcule et affiche la quantité par personne
+                total: { nom: "Total élec.", unite: "kWh", type: "index",  hc: true,   total: false,   toCO2: 0.05,  couleur: "#000000", prix: ["abonnement"], surface: true},
+                chauf: { nom: "Chauffage",   unite: "kWh", type: "index",  hc: true,   total: "total", toCO2: 0.05,  couleur: "#D55E00", prix: true, surface: true},
+                ecs: {   nom: "Eau chaude",  unite: "kWh", type: "index",  hc: true,   total: "total", toCO2: 0.05,  couleur: "#56B4E9", prix: true, pers: true},
+//              ev: {    nom: "Véhicule",    unite: "kWh", type: "index",  hc: true,   total: "total", toCO2: 0.05,  couleur: "#009E73", prix: true},
+                divers: {nom: "Divers",      unite: "kWh", type: ["total","-chauf","-ecs"], total: "total", toCO2: 0.05,  couleur: "#CC79A7", prix: true, pers: true},
+                bois: {  nom: "Bois",        unite: "kg",  type: "conso",  tokWh: 4.1, total: false, toCO2: 0,    couleur: "#8B4513", prix: true, dash: true, surface: true},
+                dju: {   nom:"Degrés-jours-unités", unite: "°C", type: "mesure"},
+                enso: {  nom:"Ensoleillement", unite: "h", type: "mesure"},
+                chauf_prev: { nom:"Prévision chauffage", unite: "kWh", type: ["chauf", "bois", "=", "A*dju", "B*enso", "C"]},
+            },
+
+            graphes: {
+                conso_an: {titre: "Évolution des consommations annuelles", unite: "kWh", nom: "Consommation", series: ["total", "chauf", "ecs", "divers", "bois", "chauf_prev"], largeur: "50%", periode: "an"},
+                prix_an: {titre: "Évolution des prix annuels", unite: "kWh", nom: "Consommation", series: ["total", "chauf", "ecs", "divers", "bois", "chauf_prev"], largeur: "50%", periode: "an"},
+                conso_mois: {titre: "Évolution des consommations mensuelles", unite: "kWh", nom: "Consommation", series: ["total", "chauf", "ecs", "divers", "bois", "chauf_prev"], largeur: "50%", periode: "mois"},
+            },
+
+            tableaux: {
+                annuel: {titre: "Récapitulatif annuel", colonnes: {
+                    total: ["kWh", "kWh/m²", "€"],
+                    chauf: ["kWh", "kWh/m²", "€"],
+                    ecs: ["kWh", "kWh/m²", "€"],
+                    divers: ["kWh", "kWh/m²", "€"],
+                }
+
+                },
+            }
+
+
+
+        };
+        // relevés des différents compteurs tels que décrits dans la variable desc
+        let compteurs = [
+            // prix_hp et prix_hc sont les prix courants pour le calcul du coût des kWh en heures pleines et en heures creuses,  prix_bois est le prix d'une stère de bois en € (environ 400 kg)
+            {date:"2025-09-01", total_hc:29157, total_hp:30067, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ev_hc:0, ecs_hc:13731.26, ecs_hp:0, bois:0},
+            {kWh_hp: /*HP*/0.1434*1.2+/*Accise*/0.02998*1.2, kWh_hc: /*HC*/0.1063*1.2+/*Accise*/0.02998*1.2, abonnement: /*abo*/14.40*1.055+/*CTA*/(27.18*1.055+3.14*1.2)/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2025-08-01", total_hc:29046, total_hp:29960, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ev_hc:0, ecs_hc:13662.18, ecs_hp:0, bois:0},
+            {date:"2025-07-01", total_hc:28966, total_hp:29889, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ev_hc:0, ecs_hc:13617.38, ecs_hp:0, bois:0},
+            {date:"2025-06-01", total_hc:28835, total_hp:29777, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ev_hc:0, ecs_hc:13533.12, ecs_hp:0, bois:0},
+            {date:"2025-05-01", total_hc:28692, total_hp:29667, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ev_hc:0, ecs_hc:13436.6, ecs_hp:0, bois:0},
+            {date:"2025-04-01", total_hc:28503, total_hp:29479, chauf_hc:24597, chauf_hp:30638, ev_hp:216, ev_hc:0, ecs_hc:13321.33, ecs_hp:0, bois:21.5},
+            {date:"2025-03-01", total_hc:28105, total_hp:29073, chauf_hc:24392, chauf_hp:30359, ev_hp:216, ev_hc:0, ecs_hc:13179.09, ecs_hp:0, bois:50},
+            {kWh_hp: /*HP*/0.1451*1.2+/*Accise*/0.0337*1.2, kWh_hc: /*HC*/0.1076*1.2+/*Accise*/0.0337*1.2, abonnement: /*abo*/14.40*1.055+/*CTA*/(27.18*1.055+3.14*1.2)/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2025-02-01", total_hc:27692, total_hp:28516, chauf_hc:24114, chauf_hp:29900, ev_hp:216, ev_hc:0, ecs_hc:13090.63, ecs_hp:0, bois:110},
+            {date:"2025-01-01", total_hc:27117, total_hp:27645, chauf_hc:23705, chauf_hp:29169, ev_hp:216, ev_hc:0, ecs_hc:12974.05, ecs_hp:0, bois:130},
+            {date:"2024-12-01", total_hc:26642, total_hp:26993, chauf_hc:23434, chauf_hp:28650, ev_hp:216, ev_hc:0, ecs_hc:12840.98, ecs_hp:0, bois:85},
+            {date:"2024-11-01", total_hc:26289, total_hp:26530, chauf_hc:23240, chauf_hp:28311, ev_hp:216, ev_hc:0, ecs_hc:12732.78, ecs_hp:0, bois:46},
+            {date:"2024-10-01", total_hc:26133, total_hp:26404, chauf_hc:23232, chauf_hp:28297, ev_hp:216, ev_hc:0, ecs_hc:12635.1, ecs_hp:0, bois:0},
+            {date:"2024-09-01", total_hc:25997, total_hp:26289, chauf_hc:23232, chauf_hp:28297, ev_hp:216, ev_hc:0, ecs_hc:12548.15, ecs_hp:0, bois:0},
+            {date:"2024-08-05", total_hc:25882, total_hp:26182, chauf_hc:23232, chauf_hp:28297, ev_hp:213, ev_hc:0, ecs_hc:12478.63, ecs_hp:0, bois:0},
+            {date:"2024-07-01", total_hc:25758, total_hp:26079, chauf_hc:23232, chauf_hp:28297, ev_hp:210, ev_hc:0, ecs_hc:12399.17, ecs_hp:0, bois:0},
+            {date:"2024-06-01", total_hc:25615, total_hp:25972, chauf_hc:23232, chauf_hp:28297, ev_hp:207, ev_hc:0, ecs_hc:12300.72, ecs_hp:0, bois:0},
+            {date:"2024-05-01", total_hc:25452, total_hp:25840, chauf_hc:23216, chauf_hp:28274, ev_hp:204, ev_hc:0, ecs_hc:12198.26, ecs_hp:0, bois:19.8},
+            {date:"2024-04-01", total_hc:25207, total_hp:25569, chauf_hc:23118, chauf_hp:28128, ev_hp:201, ev_hc:0, ecs_hc:12095.8, ecs_hp:0, bois:21.3},
+            {date:"2024-03-01", total_hc:24889, total_hp:25214, chauf_hc:22940, chauf_hp:27878, ev_hp:198, ev_hc:0, ecs_hc:12000.82, ecs_hp:0, bois:40},
+            {kWh_hp: /*HP*/0.2040*1.2+/*CSPE*/0.021*1.2, kWh_hc: /*HC*/0.1513*1.2+/*CSPE*/0.021*1.2, abonnement: /*abo*/13.45*1.055+/*CTA*/30.71/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2024-02-01", total_hc:24505, total_hp:24716, chauf_hc:22741, chauf_hp:27472, ev_hp:195, ev_hc:0, ecs_hc:11897.86, ecs_hp:0, bois:168.3},
+            {date:"2024-01-01", total_hc:23974, total_hp:24031, chauf_hc:22423, chauf_hp:26876, ev_hp:192, ev_hc:0, ecs_hc:11786.67, ecs_hp:0, bois:131.8},
+            {date:"2023-12-01", total_hc:23544, total_hp:23461, chauf_hc:22200, chauf_hp:26402, ev_hp:189, ev_hc:0, ecs_hc:11670.82, ecs_hp:0, bois:95.8},
+            {date:"2023-11-01", total_hc:23222, total_hp:23093, chauf_hc:22038, chauf_hp:26159, ev_hp:186, ev_hc:0, ecs_hc:11570.83, ecs_hp:0, bois:28.7},
+            {date:"2023-10-01", total_hc:23062, total_hp:22950, chauf_hc:22024, chauf_hp:26140, ev_hp:183, ev_hc:0, ecs_hc:11473.36, ecs_hp:0, bois:0},
+            {date:"2023-09-01", total_hc:22931, total_hp:22839, chauf_hc:22024, chauf_hp:26140, ev_hp:180, ev_hc:0, ecs_hc:11392.44, ecs_hp:0, bois:0},
+            {kWh_hp: /*HP*/0.2040*1.2+/*TCFE*/0.00663*1.2+/*CSPE*/0.001*1.2, kWh_hc: /*HC*/0.1513*1.2+/*TCFE*/0.00663*1.2+/*CSPE*/0.001*1.2, abonnement: /*abo*/13.30*1.055+/*CTA*/29.43/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2023-08-01", total_hc:22820, total_hp:22735, chauf_hc:22024, chauf_hp:26140, ev_hp:177, ev_hc:0, ecs_hc:11326.77, ecs_hp:0, bois:0},
+            {date:"2023-07-01", total_hc:22697, total_hp:22633, chauf_hc:22024, chauf_hp:26140, ev_hp:174, ev_hc:0, ecs_hc:11252.64, ecs_hp:0, bois:0},
+            {date:"2023-06-01", total_hc:22564, total_hp:22525, chauf_hc:22024, chauf_hp:26140, ev_hp:171, ev_hc:0, ecs_hc:11167.4, ecs_hp:0, bois:0},
+            {date:"2023-05-01", total_hc:22388, total_hp:22405, chauf_hc:22024, chauf_hp:26140, ev_hp:168, ev_hc:0, ecs_hc:11052.6, ecs_hp:0, bois:13.4},
+            {date:"2023-04-01", total_hc:22160, total_hp:22145, chauf_hc:21934, chauf_hp:25983, ev_hp:165, ev_hc:0, ecs_hc:10970.25, ecs_hp:0, bois:69.6},
+            {date:"2023-03-01", total_hc:21849, total_hp:21769, chauf_hc:21803, chauf_hp:25743, ev_hp:162, ev_hc:0, ecs_hc:10862.68, ecs_hp:0, bois:105},
+            {kWh_hp: /*HP*/0.1458*1.2+/*TCFE*/0.00663*1.2+/*CSPE*/0.001*1.2, kWh_hc: /*HC*/0.1336*1.2+/*TCFE*/0.00663*1.2+/*CSPE*/0.001*1.2, abonnement: /*abo*/12.77*1.055+/*CTA*/29.43/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2023-02-01", total_hc:21424, total_hp:21207, chauf_hc:21573, chauf_hp:25303, ev_hp:159, ev_hc:0, ecs_hc:10759.36, ecs_hp:0, bois:109.8},
+            {kWh_hp: /*HP*/0.1458*1.2+/*TCFE*/0.00663*1.2+/*CSPE*/0.00763*1.2, kWh_hc: /*HC*/0.1336*1.2+/*TCFE*/0.00663*1.2+/*CSPE*/0.00763*1.2, abonnement: /*abo*/12.77*1.055+/*CTA*/29.43/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2023-01-01", total_hc:20859, total_hp:20469, chauf_hc:21272, chauf_hp:24693, ev_hp:156, ev_hc:0, ecs_hc:10629.44, ecs_hp:0, bois:143.9},
+            {date:"2022-12-01", total_hc:20207, total_hp:19644, chauf_hc:20894, chauf_hp:23977, ev_hp:153, ev_hc:0, ecs_hc:10510.8, ecs_hp:0, bois:66.8, dju:376.3, enso: 64},
+            {date:"2022-11-01", total_hc:19830, total_hp:19298, chauf_hc:20710, chauf_hp:23771, ev_hp:150, ev_hc:0, ecs_hc:10408.77, ecs_hp:0, bois:0, dju:209.1, enso: 120.7},
+            {date:"2022-10-01", total_hc:19655, total_hp:19136, chauf_hc:20707, chauf_hp:23771, ev_hp:147, ev_hc:0, ecs_hc:10304.97, ecs_hp:0, bois:0, dju:73.6, enso: 112.8},
+            {date:"2022-09-01", total_hc:19504, total_hp:18996, chauf_hc:20707, chauf_hp:23771, ev_hp:144, ev_hc:0, ecs_hc:10218.63, ecs_hp:0, bois:0, dju:72.7, enso: 168.4},
+            {date:"2022-08-01", total_hc:19381, total_hp:18862, chauf_hc:20707, chauf_hp:23771, ev_hp:141, ev_hc:0, ecs_hc:10155, ecs_hp:0, bois:0, dju:21.8, enso: 261.6},
+            {date:"2022-07-01", total_hc:19276, total_hp:18757, chauf_hc:20707, chauf_hp:23771, ev_hp:138, ev_hc:0, ecs_hc:10100.87, ecs_hp:0, bois:0, dju:36, enso: 345.1},
+            {date:"2022-06-01", total_hc:19130, total_hp:18624, chauf_hc:20707, chauf_hp:23771, ev_hp:135, ev_hc:0, ecs_hc:10011.73, ecs_hp:0, bois:0, dju:51, enso: 242.5},
+            {date:"2022-05-01", total_hc:18955, total_hp:18496, chauf_hc:20707, chauf_hp:23771, ev_hp:132, ev_hc:0, ecs_hc:9899.3, ecs_hp:0, bois:0, dju:101.4, enso: 250.4},
+            {date:"2022-04-01", total_hc:18657, total_hp:18257, chauf_hc:20581, chauf_hp:23659, ev_hp:129, ev_hc:0, ecs_hc:9784.61, ecs_hp:0, bois:0, dju:201.5, enso: 22.1},
+            {date:"2022-03-01", total_hc:18178, total_hp:17882, chauf_hc:20327, chauf_hp:23442, ev_hp:126, ev_hc:0, ecs_hc:9634.42, ecs_hp:0, bois:46, dju:234.2, enso: 171.7},
+            {kWh_hp: /*HP*/0.1458*1.2+/*TCFE*/0.00794*1.2+/*CSPE*/0.001*1.2, kWh_hc: /*HC*/0.1149*1.2+/*TFCE*/0.00794*1.2+/*CSPE*/0.001*1.2, abonnement: 12.22*1.055+27.61/12*1.055, kg: 80/400, surface: 135, personnes: 4, dju:270.5, enso: 92.6},
+            {date:"2022-02-01", total_hc:17634, total_hp:17354, chauf_hc:19946, chauf_hp:23064, ev_hp:123, ev_hc:0, ecs_hc:9534.11, ecs_hp:0, bois:104.5, dju:362.4, enso: 57.5},
+            {date:"2022-01-01", total_hc:16897, total_hp:16626, chauf_hc:19435, chauf_hp:22534, ev_hp:120, ev_hc:0, ecs_hc:9380.09, ecs_hp:0, bois:118},
+            {date:"2021-12-01", total_hc:16241, total_hp:15951, chauf_hc:18993, chauf_hp:22051, ev_hp:117, ev_hc:0, ecs_hc:9243.5, ecs_hp:0, bois:103},
+            {date:"2021-11-01", total_hc:15713, total_hp:15427, chauf_hc:18649, chauf_hp:21719, ev_hp:114, ev_hc:0, ecs_hc:9123.04, ecs_hp:0, bois:15},
+            {date:"2021-10-01", total_hc:15490, total_hp:15217, chauf_hc:18608, chauf_hp:21677, ev_hp:111, ev_hc:0, ecs_hc:9006.78, ecs_hp:0, bois:0},
+            {date:"2021-09-01", total_hc:15327, total_hp:15077, chauf_hc:18608, chauf_hp:21677, ev_hp:108, ev_hc:0, ecs_hc:8909.14, ecs_hp:0, bois:0},
+            {kWh_hp: 0.1194*1.2+0.0099*1.2+0.0225*1.2, kWh_hc: 0.0809*1.2+0.0099*1.2+0.0225*1.2, abonnement: 12.33*1.055+27.02/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2021-08-01", total_hc:15199, total_hp:14942, chauf_hc:18608, chauf_hp:21677, ev_hp:105, ev_hc:0, ecs_hc:8836.87, ecs_hp:0, bois:0},
+            {date:"2021-07-01", total_hc:15086, total_hp:14836, chauf_hc:18608, chauf_hp:21677, ev_hp:102, ev_hc:0, ecs_hc:8773.37, ecs_hp:0, bois:0},
+            {date:"2021-06-01", total_hc:14931, total_hp:14709, chauf_hc:18608, chauf_hp:21677, ev_hp:99, ev_hc:0, ecs_hc:8676.47, ecs_hp:0, bois:0},
+            {date:"2021-05-01", total_hc:14712, total_hp:14542, chauf_hc:18569, chauf_hp:21657, ev_hp:96, ev_hc:0, ecs_hc:8560.53, ecs_hp:0, bois:0},
+            {date:"2021-04-01", total_hc:14373, total_hp:14186, chauf_hc:18414, chauf_hp:21459, ev_hp:93, ev_hc:0, ecs_hc:8441.33, ecs_hp:0, bois:0},
+            {date:"2021-03-01", total_hc:13768, total_hp:13704, chauf_hc:18023, chauf_hp:21158, ev_hp:90, ev_hc:0, ecs_hc:8297.61, ecs_hp:0, bois:0},
+            {date:"2021-02-01", total_hc:13096, total_hp:13027, chauf_hc:17530, chauf_hp:20649, ev_hp:87, ev_hc:0, ecs_hc:8180.38, ecs_hp:0, bois:0},
+            {date:"2021-01-01", total_hc:12188, total_hp:12084, chauf_hc:16849, chauf_hp:19909, ev_hp:84, ev_hc:0, ecs_hc:8025.94, ecs_hp:0, bois:0},
+            {date:"2020-12-01", total_hc:11400, total_hp:11240, chauf_hc:16280, chauf_hp:19292, ev_hp:81, ev_hc:0, ecs_hc:7883.9, ecs_hp:0, bois:0},
+            {date:"2020-11-01", total_hc:10921, total_hp:10815, chauf_hc:15977, chauf_hp:19057, ev_hp:78, ev_hc:0, ecs_hc:7773.79, ecs_hp:0, bois:0},
+            {date:"2020-10-01", total_hc:10648, total_hp:10537, chauf_hc:15866, chauf_hp:18944, ev_hp:75, ev_hc:0, ecs_hc:7677.07, ecs_hp:0, bois:0},
+            {kWh_hp: /*HP*/0.1194*1.2+/*TCFE*/0.0099*1.2+/*CSPE*/0.0225*1.2, kWh_hc: /*HC*/0.08*1.2+/*TCFE*/0.0099*1.2+/*CSPE*/0.0225*1.2, abonnement: 11.09*1.055+27.02/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2020-09-01", total_hc:10495, total_hp:10402, chauf_hc:15866, chauf_hp:18944, ev_hp:72, ev_hc:0, ecs_hc:7586.71, ecs_hp:0, bois:0},
+            {date:"2020-08-01", total_hc:10358, total_hp:10260, chauf_hc:15866, chauf_hp:18944, ev_hp:69, ev_hc:0, ecs_hc:7509.12, ecs_hp:0, bois:0},
+            {kWh_hp: /*HP*/0.09*1.2+/*TDCFE*/0.003273*1.2+/*TCCFE*/0.006545*1.2+/*CSPE*/0.0225*1.2, kWh_hc: /*HC*/0.0743*1.2+/*TDCFE*/0.003273*1.2+/*TCCFE*/0.006545*1.2+/*CSPE*/0.0225*1.2, abonnement: 11.95*1.055+6.03/12*1.055, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2020-07-01", total_hc:10261, total_hp:10165, chauf_hc:15866, chauf_hp:18944, ev_hp:66, ev_hc:0, ecs_hc:7458.13, ecs_hp:0, bois:0},
+            {date:"2020-06-01", total_hc:10107, total_hp:10024, chauf_hc:15866, chauf_hp:18944, ev_hp:63, ev_hc:0, ecs_hc:7363.13, ecs_hp:0, bois:0},
+            {date:"2020-05-01", total_hc:9941, total_hp:9872, chauf_hc:15866, chauf_hp:18944, ev_hp:60, ev_hc:0, ecs_hc:7257.2, ecs_hp:0, bois:0},
+            {date:"2020-04-01", total_hc:9730, total_hp:9677, chauf_hc:15835, chauf_hp:18910, ev_hp:57, ev_hc:0, ecs_hc:7145.41, ecs_hp:0, bois:0},
+            {date:"2020-03-01", total_hc:9178, total_hp:9175, chauf_hc:15486, chauf_hp:18571, ev_hp:54, ev_hc:0, ecs_hc:7013.24, ecs_hp:0, bois:0},
+            {date:"2020-02-01", total_hc:8576, total_hp:8620, chauf_hc:15074, chauf_hp:18175, ev_hp:51, ev_hc:0, ecs_hc:6893.06, ecs_hp:0, bois:0},
+            {date:"2020-01-01", total_hc:7850, total_hp:7847, chauf_hc:14539, chauf_hp:17565, ev_hp:48, ev_hc:0, ecs_hc:6768.85, ecs_hp:0, bois:0},
+            {date:"2019-12-01", total_hc:7125, total_hp:7029, chauf_hc:14011, chauf_hp:16913, ev_hp:45, ev_hc:0, ecs_hc:6640.78, ecs_hp:0, bois:0},
+            {date:"2019-11-01", total_hc:6482, total_hp:6383, chauf_hc:13546, chauf_hp:16428, ev_hp:42, ev_hc:0, ecs_hc:6526.36, ecs_hp:0, bois:0},
+            {date:"2019-10-01", total_hc:6217, total_hp:6128, chauf_hc:13442, chauf_hp:16322, ev_hp:39, ev_hc:0, ecs_hc:6435.97, ecs_hp:0, bois:0},
+            {date:"2019-09-01", total_hc:6073, total_hp:6006, chauf_hc:13442, chauf_hp:16322, ev_hp:36, ev_hc:0, ecs_hc:6347.07, ecs_hp:0, bois:0},
+            {kWh_hp: 0.125, kWh_hc: 0.175, abonnement: 160/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2019-08-02", total_hc:5942, total_hp:5894, chauf_hc:13442, chauf_hp:16322, ev_hp:33, ev_hc:0, ecs_hc:6277.03, ecs_hp:0, bois:0},
+            {date:"2019-07-01", total_hc:5853, total_hp:5810, chauf_hc:13437, chauf_hp:16319, ev_hp:30, ev_hc:0, ecs_hc:6231.12, ecs_hp:0, bois:0},
+            {date:"2019-06-01", total_hc:5697, total_hp:5684, chauf_hc:13437, chauf_hp:16319, ev_hp:27, ev_hc:0, ecs_hc:6137.3, ecs_hp:0, bois:0},
+            {date:"2019-05-01", total_hc:5463, total_hp:5521, chauf_hc:13359, chauf_hp:16271, ev_hp:24, ev_hc:0, ecs_hc:6045.56, ecs_hp:0, bois:0},
+            {date:"2019-04-01", total_hc:5141, total_hp:5269, chauf_hc:13180, chauf_hp:16126, ev_hp:21, ev_hc:0, ecs_hc:5956.77, ecs_hp:0, bois:0},
+            {date:"2019-03-01", total_hc:4588, total_hp:4876, chauf_hc:12820, chauf_hp:15879, ev_hp:18, ev_hc:0, ecs_hc:5834.77, ecs_hp:0, bois:0},
+            {date:"2019-02-01", total_hc:3993, total_hp:4256, chauf_hc:12394, chauf_hp:15397, ev_hp:15, ev_hc:0, ecs_hc:5732.12, ecs_hp:0, bois:0},
+            {date:"2019-01-01", total_hc:3132, total_hp:3254, chauf_hc:11738, chauf_hp:14570, ev_hp:12, ev_hc:0, ecs_hc:5599.35, ecs_hp:0, bois:0},
+            {date:"2018-12-01", total_hc:2450, total_hp:2409, chauf_hc:11247, chauf_hp:13931, ev_hp:10, ev_hc:0, ecs_hc:5477.27, ecs_hp:0, bois:0},
+            {date:"2018-11-01", total_hc:1874, total_hp:1758, chauf_hc:10845, chauf_hp:13458, ev_hp:7, ev_hc:0, ecs_hc:5369.86, ecs_hp:0, bois:0},
+            {date:"2018-10-01", total_hc:1617, total_hp:1516, chauf_hc:10745, chauf_hp:13353, ev_hp:4, ev_hc:0, ecs_hc:5275.68, ecs_hp:0, bois:0},
+            {date:"2018-09-01", total_hc:1478, total_hp:1393, chauf_hc:10745, chauf_hp:13353, ev_hp:1, ev_hc:0, ecs_hc:5196.91, ecs_hp:0, bois:0},
+            {kWh_hp: 0.121, kWh_hc: 0.1694, abonnement: 150/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2018-08-01", total_hc:1350, total_hp:1267, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ev_hc:0, ecs_hc:5129.79, ecs_hp:0, bois:0},
+            {date:"2018-07-02", total_hc:1263, total_hp:1178, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ev_hc:0, ecs_hc:5085.45, ecs_hp:0, bois:0},
+            {date:"2018-06-01", total_hc:1126, total_hp:1057, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ev_hc:0, ecs_hc:5000.78, ecs_hp:0, bois:0},
+            {date:"2018-05-01", total_hc:1000, total_hp:940, chauf_hc:10744, chauf_hp:13350, ev_hp:0, ev_hc:0, ecs_hc:4931.05, ecs_hp:0, bois:0},
+            {date:"2018-04-01", total_hc:709, total_hp:700, chauf_hc:10613, chauf_hp:13241, ev_hp:0, ev_hc:0, ecs_hc:4834.7, ecs_hp:0, bois:0},
+            {date:"2018-03-01", total_hc:76, total_hc_init:-848+76, total_hp:79,  total_hp_init:-895+79, chauf_hc:10147, chauf_hp:12755, ev_hp:0, ev_hc:0, ecs_hc:4731.71, ecs_hp:0, bois:0},
+            {date:"2018-02-01", total_hc:55016, total_hp:89066, chauf_hc:9471, chauf_hp:11999, ev_hp:0, ev_hc:0, ecs_hc:4616.74, ecs_hp:0, bois:0},
+            {date:"2018-01-01", total_hc:54294, total_hp:88324, chauf_hc:8937, chauf_hp:11412, ev_hp:0, ev_hc:0, ecs_hc:4503.37, ecs_hp:0, bois:0},
+            {date:"2017-12-01", total_hc:53526, total_hp:87407, chauf_hc:8355, chauf_hp:10655, ev_hp:0, ev_hc:0, ecs_hc:4386.63, ecs_hp:0, bois:0},
+            {date:"2017-11-01", total_hc:52923, total_hp:86759, chauf_hc:7933, chauf_hp:10178, ev_hp:0, ev_hc:0, ecs_hc:4277.89, ecs_hp:0, bois:0},
+            {date:"2017-10-01", total_hc:52689, total_hp:86530, chauf_hc:7860, chauf_hp:10096, ev_hp:0, ev_hc:0, ecs_hc:4187.38, ecs_hp:0, bois:0},
+            {date:"2017-09-01", total_hc:52542, total_hp:86408, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ev_hc:0, ecs_hc:4102.79, ecs_hp:0, bois:0},
+            {kWh_hp: 0.115, kWh_hc: 0.161, abonnement: 145/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2017-08-01", total_hc:52403, total_hp:86278, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ev_hc:0, ecs_hc:4035, ecs_hp:0, bois:0},
+            {date:"2017-07-01", total_hc:52326, total_hp:86207, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ev_hc:0, ecs_hc:3981.69, ecs_hp:0, bois:0},
+            {date:"2017-06-01", total_hc:52201, total_hp:86104, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ev_hc:0, ecs_hc:3910.28, ecs_hp:0, bois:0},
+            {date:"2017-05-01", total_hc:52011, total_hp:85977, chauf_hc:7821, chauf_hp:10072, ev_hp:0, ev_hc:0, ecs_hc:3819.77, ecs_hp:0, bois:0},
+            {date:"2017-04-01", total_hc:51687, total_hp:85726, chauf_hc:7657, chauf_hp:9951, ev_hp:0, ev_hc:0, ecs_hc:3724.52, ecs_hp:0, bois:0},
+            {date:"2017-03-01", total_hc:51189, total_hp:85308, chauf_hc:7335, chauf_hp:9670, ev_hp:0, ev_hc:0, ecs_hc:3616.67, ecs_hp:0, bois:0},
+            {date:"2017-02-01", total_hc:50592, total_hp:84618, chauf_hc:6898, chauf_hp:9123, ev_hp:0, ev_hc:0, ecs_hc:3514.76, ecs_hp:0, bois:0},
+            {date:"2017-01-01", total_hc:49654, total_hp:83515, chauf_hc:6160, chauf_hp:8170, ev_hp:0, ev_hc:0, ecs_hc:3384.49, ecs_hp:0, bois:0},
+            {date:"2016-12-01", total_hc:48903, total_hp:82487, chauf_hc:5599, chauf_hp:7310, ev_hp:0, ev_hc:0, ecs_hc:3267.48, ecs_hp:0, bois:0},
+            {date:"2016-11-01", total_hc:48306, total_hp:81904, chauf_hc:5173, chauf_hp:6888, ev_hp:0, ev_hc:0, ecs_hc:3164.11, ecs_hp:0, bois:0},
+            {date:"2016-10-01", total_hc:48000, total_hp:81575, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ev_hc:0, ecs_hc:3075.68, ecs_hp:0, bois:0},
+            {date:"2016-09-01", total_hc:47876, total_hp:81462, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ev_hc:0, ecs_hc:3005.94, ecs_hp:0, bois:0},
+            {kWh_hp: 0.117, kWh_hc: 0.1638, abonnement: 145/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2016-08-01", total_hc:47741, total_hp:81345, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ev_hc:0, ecs_hc:2929.75, ecs_hp:0, bois:0},
+            {date:"2016-07-01", total_hc:47644, total_hp:81263, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ev_hc:0, ecs_hc:2873.46, ecs_hp:0, bois:0},
+            {date:"2016-06-01", total_hc:47501, total_hp:81157, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ev_hc:0, ecs_hc:2789.19, ecs_hp:0, bois:0},
+            {date:"2016-05-01", total_hc:47323, total_hp:81029, chauf_hc:5006, chauf_hp:6695, ev_hp:0, ev_hc:0, ecs_hc:2693.51, ecs_hp:0, bois:0},
+            {date:"2016-04-01", total_hc:46880, total_hp:80667, chauf_hc:4728, chauf_hp:6455, ev_hp:0, ev_hc:0, ecs_hc:2592.64, ecs_hp:0, bois:0},
+            {date:"2016-03-01", total_hc:46224, total_hp:80038, chauf_hc:4273, chauf_hp:5977, ev_hp:0, ev_hc:0, ecs_hc:2464.76, ecs_hp:0, bois:0},
+            {date:"2016-02-01", total_hc:45604, total_hp:79245, chauf_hc:3830, chauf_hp:5331, ev_hp:0, ev_hc:0, ecs_hc:2354.29, ecs_hp:0, bois:0},
+            {date:"2016-01-01", total_hc:44880, total_hp:78308, chauf_hc:3299, chauf_hp:4547, ev_hp:0, ev_hc:0, ecs_hc:2242.38, ecs_hp:0, bois:0},
+            {date:"2015-12-01", total_hc:44388, total_hp:77741, chauf_hc:2962, chauf_hp:4135, ev_hp:0, ev_hc:0, ecs_hc:2152.92, ecs_hp:0, bois:0},
+            {date:"2015-11-01", total_hc:44018, total_hp:77350, chauf_hc:2748, chauf_hp:3895, ev_hp:0, ev_hc:0, ecs_hc:2061.12, ecs_hp:0, bois:0},
+            {date:"2015-10-01", total_hc:43718, total_hp:77049, chauf_hc:2605, chauf_hp:3746, ev_hp:0, ev_hc:0, ecs_hc:1973.15, ecs_hp:0, bois:0},
+            {date:"2015-09-01", total_hc:43573, total_hp:76927, chauf_hc:2605, chauf_hp:3746, ev_hp:0, ev_hc:0, ecs_hc:1892.73, ecs_hp:0, bois:0},
+            {kWh_hp: 0.126, kWh_hc: 0.1764, abonnement: 140/12, kg: 80/400, surface: 135, personnes: 4},
+            {date:"2015-08-01", total_hc:43441, total_hp:76798, chauf_hc:2605, chauf_hp:3746, ev_hp:0, ev_hc:0, ecs_hc:1822.4, ecs_hp:0, bois:0},
+            {date:"2015-07-01", total_hc:43350, total_hp:76721, chauf_hc:2605, chauf_hp:3746, ev_hp:0, ev_hc:0, ecs_hc:1773.14, ecs_hp:0, bois:0},
+            {date:"2015-06-01", total_hc:43188, total_hp:76612, chauf_hc:2605, chauf_hp:3746, ev_hp:0, ev_hc:0, ecs_hc:1677.92, ecs_hp:0, bois:0},
+            {date:"2015-05-01", total_hc:42993, total_hp:76459, chauf_hc:2571, chauf_hp:3707, ev_hp:0, ev_hc:0, ecs_hc:1581.15, ecs_hp:0, bois:0},
+            {date:"2015-04-01", total_hc:42687, total_hp:76214, chauf_hc:2479, chauf_hp:3594, ev_hp:0, ev_hc:0, ecs_hc:1437.56, ecs_hp:0, bois:0},
+            {date:"2015-03-01", total_hc:42057, total_hp:75540, chauf_hc:2086, chauf_hp:3074, ev_hp:0, ev_hc:0, ecs_hc:1276.76, ecs_hp:0, bois:0},
+            {date:"2015-02-01", total_hc:41312, total_hp:74554, chauf_hc:1553, chauf_hp:2232, ev_hp:0, ev_hc:0, ecs_hc:1132.9, ecs_hp:0, bois:0},
+            {date:"2015-01-01", total_hc:40488, total_hp:73468, chauf_hc:964, chauf_hp:1325, ev_hp:0, ev_hc:0, ecs_hc:973.47, ecs_hp:0, bois:0},
+            {kWh_hp: 0.115, kWh_hc: 0.161, abonnement: 140/12, kg: 80/400, surface: 135, personnes: 4}
+            //{date:"2014-12-01", total_hc:39639, total_hp:72430, chauf_hc:369, chauf_hp:487, ev_hp:0, ev_hc:0, ecs_hc:798.06, ecs_hp:0, bois:0},
+            //{date:"2014-11-01", total_hc:39087, total_hp:71830, chauf_hc:46, chauf_hp:68, ev_hp:0, ev_hc:0, ecs_hc:650.07, ecs_hp:0, bois:0},
+            //{date:"2014-10-01", total_hc:38870, total_hp:71624, chauf_hc:0, chauf_hp:0, ev_hp:0, ev_hc:0, ecs_hc:542.7, ecs_hp:0, bois:0},
+        ]
+        ;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f0f8ff;
+        }
+        .numeric {
+            text-align: right;
+        }
+        .unite {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .cout {
+            color: #d63384;
+            font-weight: bold;
+        }
+        .percentage {
+            color: #198754;
+        }
+        .error {
+            background-color: #dc3545;
+            color: white;
+        }
+        .graphique-container {
+            margin-bottom: 30px;
+        }
+        .graphiques-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .graphique-half {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .graphique-title {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .graphique-canvas {
+            height: 350px;
+        }
+        .section-title {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .table-annual {
+            margin-bottom: 30px;
+        }
+        .header-group {
+            text-align: center;
+            background-color: #e9ecef;
+        }
+        .header-detail {
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Consommation d'énergie</h1>
+        <div id="graphiques-annuels-container" class="graphiques-row">
+            <div id="graphique-container" class="graphique-container graphique-half">
+                <canvas id="graphiqueAnnuel" class="graphique-canvas"></canvas>
+            </div>
+            <div id="graphique-prix-container" class="graphique-container graphique-half">
+                <canvas id="graphiquePrixAnnuel" class="graphique-canvas"></canvas>
+            </div>
+        </div>
+        <div id="graphique-mensuel-container" class="graphique-container">
+            <canvas id="graphiqueMensuel" class="graphique-canvas"></canvas>
+        </div>
+        <div id="bilans"></div>
+    </div>
+
+    <script>
+        function genererTableauRecapitulatifAnnuel() {
+            // Utiliser les données calculées dans la variable annees par la fonction preparer
+            if (!annees || Object.keys(annees).length === 0) {
+                return null;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'table-annual';
+
+            // En-têtes avec groupes de colonnes
+            const thead = document.createElement('thead');
+
+            // Première ligne : groupes de colonnes
+            const headerRow1 = document.createElement('tr');
+
+            const thAnnee = document.createElement('th');
+            thAnnee.textContent = 'Année';
+            thAnnee.rowSpan = 2;
+            headerRow1.appendChild(thAnnee);
+
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                const thGroupe = document.createElement('th');
+                thGroupe.textContent = config.nom;
+                thGroupe.className = 'header-group';
+
+                // Calculer le nombre de colonnes : kWh + kWh/m² (si surface) + kWh/pers (si pers) + total (si activé) + prix (si activé)
+                let nbColonnes = 1;
+                if (config.surface) {
+                    nbColonnes++;
+                }
+                if (config.pers) {
+                    nbColonnes++;
+                }
+                if (config.total) {
+                    nbColonnes++;
+                }
+                if (config.prix) {
+                    nbColonnes++; // + prix si activé
+                }
+
+                thGroupe.colSpan = nbColonnes;
+                headerRow1.appendChild(thGroupe);
+            }
+
+            // Deuxième ligne : détails des colonnes
+            const headerRow2 = document.createElement('tr');
+
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                const thkWh = document.createElement('th');
+                thkWh.textContent = 'kWh';
+                thkWh.className = 'numeric header-detail';
+                headerRow2.appendChild(thkWh);
+
+                if (config.surface) {
+                    const thkWhM2 = document.createElement('th');
+                    thkWhM2.textContent = 'kWh/m²';
+                    thkWhM2.className = 'numeric header-detail';
+                    headerRow2.appendChild(thkWhM2);
+                }
+
+                if (config.pers) {
+                    const thkWhPers = document.createElement('th');
+                    thkWhPers.textContent = 'kWh/pers';
+                    thkWhPers.className = 'numeric header-detail';
+                    headerRow2.appendChild(thkWhPers);
+                }
+
+                if (config.total) {
+                    const thTotal = document.createElement('th');
+                    thTotal.textContent = 'ratio';
+                    thTotal.className = 'numeric header-detail';
+                    headerRow2.appendChild(thTotal);
+                }
+
+                if (config.prix) {
+                    const thPrix = document.createElement('th');
+                    thPrix.textContent = '€';
+                    thPrix.className = 'numeric header-detail';
+                    headerRow2.appendChild(thPrix);
+                }
+            }
+
+            thead.appendChild(headerRow1);
+            thead.appendChild(headerRow2);
+            table.appendChild(thead);
+
+            // Corps du tableau
+            const tbody = document.createElement('tbody');
+
+            // Trier les années par ordre décroissant (plus récente en premier)
+            const anneesTriees = Object.keys(annees).sort().reverse();
+
+            for (const annee of anneesTriees) {
+                const periode = annees[annee];
+                const row = document.createElement('tr');
+
+                // Colonne année
+                const anneeCell = document.createElement('td');
+                anneeCell.textContent = periode.nom;
+                row.appendChild(anneeCell);
+
+                // Calculer les totaux pour les ratios selon la configuration
+                const totauxPourRatios = {};
+                for (const [cle, config] of Object.entries(desc.valeurs)) {
+                    if (typeof config.total === 'string') {
+                        // Si total est une string, c'est la clé du total à utiliser
+                        const cleTotal = config.total;
+                        if (!totauxPourRatios[cleTotal] && periode.consos[cleTotal]) {
+                            totauxPourRatios[cleTotal] = periode.consos[cleTotal].total || 0;
+                        }
+                    }
+                }
+
+                // Colonnes des totaux avec détails
+                for (const [cle, config] of Object.entries(desc.valeurs)) {
+                    const total = periode.consos[cle] ? periode.consos[cle].total : 0;
+
+                    // kWh
+                    const cellkWh = document.createElement('td');
+                    cellkWh.className = 'numeric';
+
+                    // Ajouter la classe error si la valeur est négative
+                    if (total < 0) {
+                        cellkWh.className += ' error';
+                    }
+
+                    cellkWh.textContent = total.toFixed(0);
+
+                    // Ajouter un tooltip avec l'info si elle existe
+                    const conso = periode.consos[cle];
+                    if (conso && conso.info && conso.info.trim() !== '') {
+                        cellkWh.title = conso.info;
+                    }
+
+                    row.appendChild(cellkWh);
+
+                    if (config.surface) {
+                        const cellkWhM2 = document.createElement('td');
+                        cellkWhM2.className = 'numeric';
+                        const kWhParM2 = periode.consos[cle] ? periode.consos[cle].parm2 : 0;
+                        cellkWhM2.textContent = kWhParM2.toFixed(1);
+                        row.appendChild(cellkWhM2);
+                    }
+
+                    if (config.pers) {
+                        const cellkWhPers = document.createElement('td');
+                        cellkWhPers.className = 'numeric';
+                        const kWhParPers = periode.consos[cle] ? periode.consos[cle].parpers : 0;
+                        cellkWhPers.textContent = kWhParPers.toFixed(1);
+                        row.appendChild(cellkWhPers);
+                    }
+
+                    if (config.total) {
+                        const cellRatio = document.createElement('td');
+                        cellRatio.className = 'numeric percentage';
+
+                        if (typeof config.total === 'string') {
+                            // Utiliser la valeur spécifiée comme total pour le ratio
+                            const totalPourRatio = totauxPourRatios[config.total] || 0;
+                            if (totalPourRatio > 0) {
+                                const ratio = (total / totalPourRatio) * 100;
+                                cellRatio.textContent = `${ratio.toFixed(0)}%`;
+                            } else {
+                                cellRatio.textContent = '-';
+                            }
+                        }
+
+                        row.appendChild(cellRatio);
+                    }
+
+                    if (config.prix) {
+                        const cellPrix = document.createElement('td');
+                        cellPrix.className = 'numeric cout';
+                        const prix = periode.consos[cle] ? periode.consos[cle].prix : 0;
+                        cellPrix.textContent = `${prix.toFixed(0)}`;
+                        row.appendChild(cellPrix);
+                    }
+                }
+
+                tbody.appendChild(row);
+            }
+
+            table.appendChild(tbody);
+            return table;
+        }
+
+        function genererGraphiqueAnnuel() {
+            // Utiliser les données calculées dans la variable annees par la fonction preparer
+            if (!annees || Object.keys(annees).length === 0) {
+                return;
+            }
+
+            const ctx = document.getElementById('graphiqueAnnuel').getContext('2d');
+
+            // Préparer les données à partir des objets Periode dans annees
+            const anneesTriees = Object.keys(annees).sort();
+            const datasets = [];
+
+            // Créer un dataset pour chaque valeur
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                const donnees = anneesTriees.map(annee => {
+                    const periode = annees[annee];
+                    return periode.consos[cle] ? periode.consos[cle].total : 0;
+                });
+
+                const dataset = {
+                    label: config.nom,
+                    data: donnees,
+                    borderColor: config.couleur || '#6c757d',
+                    backgroundColor: config.couleur || '#6c757d',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                };
+
+                // Ajouter des tirets si la propriété dash est true
+                if (config.dash === true) {
+                    dataset.borderDash = [5, 5];
+                }
+
+                datasets.push(dataset);
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: anneesTriees,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Consommation (kWh)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Année'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Évolution des consommations annuelles'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} kWh`;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function genererGraphiquePrixAnnuel() {
+            // Utiliser les données calculées dans la variable annees par la fonction preparer
+            if (!annees || Object.keys(annees).length === 0) {
+                return;
+            }
+
+            const ctx = document.getElementById('graphiquePrixAnnuel').getContext('2d');
+
+            // Préparer les données à partir des objets Periode dans annees
+            const anneesTriees = Object.keys(annees).sort();
+            const datasets = [];
+
+            // Créer un dataset pour chaque valeur ayant prix: true
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                if (config.prix) {
+                    const donnees = anneesTriees.map(annee => {
+                        const periode = annees[annee];
+                        return periode.consos[cle] ? periode.consos[cle].prix : 0;
+                    });
+
+                    const dataset = {
+                        label: config.nom,
+                        data: donnees,
+                        borderColor: config.couleur || '#6c757d',
+                        backgroundColor: config.couleur || '#6c757d',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0
+                    };
+
+                    // Ajouter des tirets si la propriété dash est true
+                    if (config.dash === true) {
+                        dataset.borderDash = [5, 5];
+                    }
+
+                    datasets.push(dataset);
+                }
+            }
+
+            // Créer le graphique seulement s'il y a des données
+            if (datasets.length > 0) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: anneesTriees,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Prix (€)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Année'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Évolution des prix annuels'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(0)} €`;
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+        }
+
+        function genererGraphiqueMensuel() {
+            // Utiliser les données calculées dans la variable mois par la fonction preparer
+            if (!mois || mois.length === 0) {
+                return;
+            }
+
+            const ctx = document.getElementById('graphiqueMensuel').getContext('2d');
+
+            // Préparer les données à partir des objets Periode dans mois (exclure le premier élément qui est incomplet)
+            const moisAffiches = mois;
+            const labels = moisAffiches.map(periode => periode.nom);
+            const datasets = [];
+
+            // Créer un dataset pour chaque valeur
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                const donnees = moisAffiches.map(periode => {
+                    return periode.consos[cle] ? periode.consos[cle].total : 0;
+                });
+
+                const dataset = {
+                    label: config.nom,
+                    data: donnees,
+                    borderColor: config.couleur || '#6c757d',
+                    backgroundColor: config.couleur || '#6c757d',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                };
+
+                // Ajouter des tirets si la propriété dash est true
+                if (config.dash === true) {
+                    dataset.borderDash = [5, 5];
+                }
+
+                datasets.push(dataset);
+            }
+
+            // Créer le graphique
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Consommation (kWh)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Mois'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Évolution des consommations mensuelles'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} kWh`;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function genererTableauxBilans() {
+            const bilansDiv = document.getElementById('bilans');
+            bilansDiv.innerHTML = '';
+
+            // Générer le tableau récapitulatif annuel
+            const tableauAnnuel = genererTableauRecapitulatifAnnuel();
+            if (tableauAnnuel) {
+                const titreAnnuel = document.createElement('h2');
+                titreAnnuel.textContent = 'Récapitulatif annuel';
+                titreAnnuel.className = 'section-title';
+                bilansDiv.appendChild(titreAnnuel);
+                bilansDiv.appendChild(tableauAnnuel);
+            }
+
+            // Générer le tableau mensuel
+            const titreMensuel = document.createElement('h2');
+            titreMensuel.textContent = 'Détail mensuel';
+            titreMensuel.className = 'section-title';
+            bilansDiv.appendChild(titreMensuel);
+
+            // Créer un seul tableau
+            const table = document.createElement('table');
+
+            // En-têtes du tableau avec groupes
+            const thead = document.createElement('thead');
+
+            // Première ligne d'en-têtes : noms des compteurs
+            const headerRow1 = document.createElement('tr');
+
+            // Première colonne : Période
+            const thPeriode = document.createElement('th');
+            thPeriode.textContent = 'Période';
+            thPeriode.rowSpan = 2;
+            headerRow1.appendChild(thPeriode);
+
+            // Pour chaque compteur, créer un groupe de colonnes
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                const thGroupe = document.createElement('th');
+                // Afficher l'unité source seulement si différente de kWh
+                thGroupe.textContent = `${config.nom}`;
+                thGroupe.className = 'header-group';
+
+                // Calculer le nombre de colonnes pour ce compteur
+                let nbColonnes = 2; // mensuelle + journalière
+                if (config.hc) {
+                    nbColonnes++; // + % HC si applicable
+                }
+
+                thGroupe.colSpan = nbColonnes;
+                headerRow1.appendChild(thGroupe);
+            }
+            // Deuxième ligne d'en-têtes : détails des colonnes
+            const headerRow2 = document.createElement('tr');
+
+            for (const [cle, config] of Object.entries(desc.valeurs)) {
+                // Consommation mensuelle
+                const thMensuel = document.createElement('th');
+                thMensuel.textContent = 'kWh';
+                thMensuel.className = 'header-detail';
+                headerRow2.appendChild(thMensuel);
+
+                // Consommation journalière
+                const thJour = document.createElement('th');
+                thJour.textContent = 'kWh/j';
+                thJour.className = 'header-detail';
+                headerRow2.appendChild(thJour);
+
+                // Pourcentage heures creuses (seulement si applicable)
+                if (config.hc) {
+                    const thHC = document.createElement('th');
+                    thHC.textContent = '% HC';
+                    thHC.className = 'header-detail';
+                    headerRow2.appendChild(thHC);
+                }
+            }
+            thead.appendChild(headerRow1);
+            thead.appendChild(headerRow2);
+            table.appendChild(thead);
+
+            // Corps du tableau
+            const tbody = document.createElement('tbody');
+
+            // Utiliser les données calculées dans la variable mois (plus récent en premier)
+            for (let i = mois.length-1; i >= 0; i--) {
+                const periode = mois[i];
+                const row = document.createElement('tr');
+
+                // Première colonne : Date de la période
+                const periodeCell = document.createElement('td');
+                periodeCell.textContent = periode.nom;
+                row.appendChild(periodeCell);
+
+                // Pour chaque compteur, ajouter les colonnes
+                for (const [cle, config] of Object.entries(desc.valeurs)) {
+                    const conso = periode.consos[cle];
+
+                    if (!conso) {
+                        // Si pas de données pour cette consommation, afficher des zéros
+                        const consoPeriodeCell = document.createElement('td');
+                        consoPeriodeCell.className = 'numeric';
+                        consoPeriodeCell.textContent = '0.00';
+                        row.appendChild(consoPeriodeCell);
+
+                        const consoJourCell = document.createElement('td');
+                        consoJourCell.className = 'numeric';
+                        consoJourCell.textContent = '0.00';
+                        row.appendChild(consoJourCell);
+
+                        if (config.hc) {
+                            const pctHCCell = document.createElement('td');
+                            pctHCCell.className = 'numeric percentage';
+                            pctHCCell.textContent = '-';
+                            row.appendChild(pctHCCell);
+                        }
+                        continue;
+                    }
+
+                    // Consommation mensuelle en kWh
+                    const consoPeriodeCell = document.createElement('td');
+                    consoPeriodeCell.className = 'numeric';
+
+                    // Ajouter la classe error si la valeur est négative
+                    if (conso.total < 0) {
+                        consoPeriodeCell.classList.add('error');
+                    }
+
+                    consoPeriodeCell.textContent = `${conso.total.toFixed(0)}`;
+
+                    // Ajouter un tooltip : priorité à la propriété brut si elle n'est pas vide
+                    if (conso.info && conso.info.trim() !== '') {
+                        consoPeriodeCell.title = conso.info;
+                    }
+
+                    row.appendChild(consoPeriodeCell);
+
+                    // Consommation journalière en kWh
+                    const consoJourCell = document.createElement('td');
+                    consoJourCell.className = 'numeric';
+                    consoJourCell.textContent = `${conso.journalier.toFixed(1)}`;
+                    row.appendChild(consoJourCell);
+
+                    // Pourcentage heures creuses (seulement si applicable)
+                    if (config.hc) {
+                        const pctHCCell = document.createElement('td');
+                        pctHCCell.className = 'numeric percentage';
+                        if (conso.total > 0 && conso.ratioHC !== undefined && !isNaN(conso.ratioHC)) {
+                            const pctHC = conso.ratioHC * 100;
+                            pctHCCell.textContent = `${pctHC.toFixed(0)}%`;
+                        } else {
+                            pctHCCell.textContent = '-';
+                        }
+                        row.appendChild(pctHCCell);
+                    }
+                }
+
+                tbody.appendChild(row);
+            }
+
+            table.appendChild(tbody);
+            bilansDiv.appendChild(table);
+        }
+
+        class Conso {
+            constants; // prices, surface...
+            valeur;
+            total;
+            totalHC;
+            totalHP;
+            journalier;
+            ratioHC; //
+            jours; // nombre de jours de la période observée
+            brut; // valeur brute si conversion d'unité
+            info; // pour l'info bulle
+            prix; // prix en fonction du cours
+            parm2; // per surface unit ratio
+            parpers; // per person
+
+            constructor(constants, valeur) {
+                this.constants = constants;
+                this.valeur = valeur;
+                this.total = 0;
+                this.totalHC = 0;
+                this.totalHP = 0;
+                this.journalier = 0;
+                this.ratioHC = 0;
+                this.jours = 0;
+                this.prix = 0;
+                this.brut = 0;
+                this.parm2 = 0;
+                this.parpers = 0;
+                this.info = "";
+            }
+
+            update() {
+                if (this.valeur.hc) {
+                    this.info = `Heures pleines : ${this.totalHP} ${this.valeur.unite}\nHeures creuses : ${this.totalHC} ${this.valeur.unite}`;
+                } else {
+                    this.info = `${this.brut.toFixed(1)} ${this.valeur.unite}`;
+                }
+                this.ratioHC = this.totalHC / this.total;
+                this.parm2 = this.total / this.constants.surface;
+                this.parpers = this.total / this.constants.personnes;
+            }
+
+            ajouter(conso) {
+                this.constants = conso.constants;
+                this.total += conso.total;
+                this.totalHP += conso.totalHP;
+                this.totalHC += conso.totalHC;
+                this.jours += conso.jours;
+                this.journalier += conso.total / conso.jours;
+                this.prix += conso.prix;
+
+                this.brut += conso.brut;
+                this.update();
+            }
+
+            retirer(conso) {
+                this.total -= conso.total;
+                this.totalHP -= conso.totalHP;
+                this.totalHC -= conso.totalHC;
+                this.journalier -= conso.total / conso.jours;
+                this.prix -= conso.prix;
+                this.brut -= conso.brut;
+                this.update();
+            }
+
+            multiplier(facteur) {
+                this.total *= facteur;
+                this.totalHP *= facteur;
+                this.totalHC *= facteur;
+                this.journalier *= facteur;
+            }
+        }
+
+        class Periode {
+            constants;
+            nom;
+            date;
+            consos; // {valeur1: Conso, valeur2: Conso}
+
+            constructor(nom, date, constants) {
+                this.nom = nom;
+                this.date = date;
+                this.consos = {};
+                this.constants = constants;
+            }
+
+            /*
+             total: {    nom: "Total",       unite: "kWh",   type: "index",  hc: true,   tokWh: 1,   total: false,       couleur: "#007bff"},
+             divers: {   nom: "Divers",      unite: "kWh",   type: ["chauf","ecs","ev"],   hc: false,  tokWh: 1,    total: "total",  couleur: "#ffc107"},
+             bois: {     nom: "Bois",        unite: "kg",    type: "conso",  hc: false,  tokWh: 4.1, total: false,       couleur: "#6c757d"}
+
+            {date: "2025-09-01", total_hc: 29157, total_hp: 30067, chauf_hc: 24624, chauf_hp: 30706, ev_hp: 216, ev_hc: 0, ecs_hc: 13731, ecs_hp: 0, bois: 0},
+            */
+            ajouterReleve (releve, precedent, nom, valeur) {
+                let c = new Conso(releve.constants, valeur);
+                // calcul conso en fonction du type
+                if (valeur.type === "conso") {
+                    c.total = releve[nom];
+                    c.prix = c.total * releve.constants[valeur.unite];
+                    c.info = `${c.total} ${valeur.unite}`;
+                } else if (valeur.type === "index") {
+                    if (valeur.hc) {
+                        // start either from previous index or from forced one in _init value
+                        c.totalHC = releve[nom+"_hc"] - (typeof releve[nom+"_hc_init"] != "undefined" ? releve[nom+"_hc_init"] : precedent[nom+"_hc"]);
+                        c.totalHP = releve[nom+"_hp"] - (typeof releve[nom+"_hp_init"] != "undefined" ? releve[nom+"_hp_init"] : precedent[nom+"_hp"]);
+                        c.total = c.totalHC + c.totalHP;
+                        c.ratioHC = c.totalHC / c.total;
+                        c.info = `Heures pleines : ${c.totalHP} ${valeur.unite}\nHeures creuses : ${c.totalHC} ${valeur.unite}`;
+                        c.prix = c.totalHC * releve.constants[valeur.unite + "_hc"] + c.totalHP * releve.constants[valeur.unite + "_hp"];
+                    } else {
+                        c.total = releve[nom] - (typeof [nom+"init"] != "undefined" ? releve[nom+"init"] : precedent[nom]);;
+                        c.prix = c.totalHP * releve.constants[valeur.unite + "_hp"];
+                    }
+                } else if (valeur.type == "mesure") {
+                    c.total = releve[nom];
+                    c.info = `${c.total} ${valeur.unite}`;
+                } else if (valeur.type.length) {
+                    if (valeur.type.indexOf("=") !== -1) {
+                        // perform a regression on a yearly basis
+                    } else {
+                        // simple computation
+                        valeur.type.forEach((sub) => {
+                            if (sub.indexOf("-") === 0) {
+                                c.retirer(this.consos[sub.substring(1)]);
+                            } else {
+                                c.ajouter(this.consos[sub]);
+                            }
+                        });
+                    }
+                }
+                c.jours = (releve.fin.getTime() - precedent.fin.getTime()) / 86400000;
+
+                if (valeur.prix && valeur.prix.length > 0) {
+                    valeur.prix.forEach(toAdd => {
+                        c.prix += releve.constants[toAdd];
+                    });
+                }
+
+                // conversion en kWh si nécessaire, pas de gestion des heures creuses
+                if (typeof valeur.tokWh != "undefined") {
+                    c.brut = c.total;
+                    c.info = `${c.brut} ${valeur.unite}`;
+                    c.total = c.total * valeur.tokWh;
+                }
+
+                c.journalier = c.total / c.jours;
+                c.constants = releve.constants;
+
+                this.consos[nom] = c;
+            }
+
+            ajouter(periode) {
+                for (const [nom, conso] of Object.entries(periode.consos)) {
+                    if (!this.consos[nom]) {
+                        this.consos[nom] = new Conso(periode.constants, conso.valeur);
+                    }
+                    this.consos[nom].ajouter(conso);
+                }
+            }
+        }
+
+        /**
+         * Compute the linear regression to best match targets from inputs on provided inputs.
+         * The forumula is assumed to be for each item: target = A*inputs[label1] + B*inputs[label2] + ... + Z
+         * Where A, B, ... are coefficients and Z is a constant
+         * @param targets array of numbers containing the target values to match
+         * @param inputs array of objects containing raw values
+         * @param labels array of properties to use from inputs
+         * @return an array of the coefficients [A, B, ... , Z] (this array has the same number of items than labels + 1 for the constant)
+         */
+        function linearRegression(targets, inputs, labels) {
+            const n = targets.length;
+            const k = labels.length;
+
+            // construct matrix X (n x (k+1)) and vector y (n x 1)
+            // X contains input values with a column of 1s for the constant term
+            const X = [];
+            const y = targets;
+
+            for (let i = 0; i < n; i++) {
+                const row = [];
+                for (let j = 0; j < k; j++) {
+                    row.push(inputs[i][labels[j]] || 0);
+                }
+                row.push(1); // constant term
+                X.push(row);
+            }
+
+            // compute X^T * X
+            const XtX = [];
+            for (let i = 0; i < k + 1; i++) {
+                XtX[i] = [];
+                for (let j = 0; j < k + 1; j++) {
+                    let sum = 0;
+                    for (let row = 0; row < n; row++) {
+                        sum += X[row][i] * X[row][j];
+                    }
+                    XtX[i][j] = sum;
+                }
+            }
+
+            // compute X^T * y
+            const Xty = [];
+            for (let i = 0; i < k + 1; i++) {
+                let sum = 0;
+                for (let row = 0; row < n; row++) {
+                    sum += X[row][i] * y[row];
+                }
+                Xty[i] = sum;
+            }
+
+            // solve (X^T * X) * beta = X^T * y using Gaussian elimination
+            const augmented = XtX.map((row, i) => [...row, Xty[i]]);
+
+            // forward elimination
+            for (let i = 0; i < k + 1; i++) {
+                // find pivot
+                let maxRow = i;
+                for (let row = i + 1; row < k + 1; row++) {
+                    if (Math.abs(augmented[row][i]) > Math.abs(augmented[maxRow][i])) {
+                        maxRow = row;
+                    }
+                }
+
+                // swap rows
+                [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
+
+                // eliminate column
+                for (let row = i + 1; row < k + 1; row++) {
+                    const factor = augmented[row][i] / augmented[i][i];
+                    for (let col = i; col < k + 2; col++) {
+                        augmented[row][col] -= factor * augmented[i][col];
+                    }
+                }
+            }
+
+            // back substitution
+            const beta = new Array(k + 1);
+            for (let i = k; i >= 0; i--) {
+                beta[i] = augmented[i][k + 1];
+                for (let j = i + 1; j < k + 1; j++) {
+                    beta[i] -= augmented[i][j] * beta[j];
+                }
+                beta[i] /= augmented[i][i];
+            }
+
+            // return coefficients for each label plus constant at the end
+            return beta;
+        }
+
+        /** Transforme les données des compteurs en releves pour simplifier le traitement */
+        function preparer() {
+            // order by ascending dates and integrate current prices to each measure
+            let releves = [];
+            let lastConstants = {};
+            for (let i = compteurs.length-1; i >= 0 ; i--) {
+                if (typeof compteurs[i].date === "undefined") {
+                    let newConstants = JSON.parse(JSON.stringify(compteurs[i]));
+                    for (const [k, v] of Object.entries(lastConstants)) {
+                        if (typeof newConstants[k] === "undefined") {
+                            newConstants[k] = v;
+                        }
+                    }
+                    lastConstants = newConstants;
+                } else {
+                    compteurs[i].constants = lastConstants;
+                    compteurs[i].fin=new Date(compteurs[i].date);
+                    releves.push(compteurs[i]);
+                }
+            }
+
+            console.log("releves", releves);
+
+            // build list of months
+            mois = [];
+            perYear = {};
+            for (let i = 1; i < releves.length; i++) {
+                let date = new Date(releves[i].date);
+                date.setMonth(date.getMonth()-1);
+                let currentYear = date.getFullYear();
+
+                let p = new Periode(`${currentYear}-${(date.getMonth()+1).toLocaleString('fr-FR', {minimumIntegerDigits: 2})}`, date, releves[i].constants);
+
+                for (const [cle, config] of Object.entries(desc.valeurs)) {
+                    p.ajouterReleve(releves[i], releves[i-1], cle, config);
+                }
+
+                perYear[currentYear] = (perYear[currentYear] ? perYear[currentYear] : 0) + 1;
+                if (perYear === 12) {
+                    p.fullYear = true;
+                }
+
+                mois.push(p);
+            }
+
+            // compute regressions on yearly basis
+            for (let i=0; i < mois.length; i++) {
+                if (!mois[i].fullYear) {
+                    continue;
+                }
+
+                let months = [mois[i-11], mois[i-10], mois[i-9], mois[i-8], mois[i-7], mois[i-6], mois[i-5], mois[i-4], mois[i-3], mois[i-2], mois[i-1], mois[i]];
+                // compute target
+                // get inputs
+                // regression of constants to get best fit to target
+            }
+
+            // build list of years
+            annees = {};
+            for (let i=0; i < mois.length; i++) {
+                let annee = mois[i].date.getFullYear();
+                let p;
+
+                if (!annees[annee]) {
+                    p = new Periode(`${mois[i].date.getFullYear()}`, mois[i].date, mois[i].constants);
+                    annees[annee] = p;
+                } else {
+                    p = annees[annee];
+                }
+                p.ajouter(mois[i]);
+            }
+        }
+
+        function testLinearRegression() {
+            let targets = [1.1, 2.4, 3.2, 3.9];
+            let inputs = [1.1, 2.4, 3.2, 3.9];
+            let lr = linearRegression([1.1, 2.4, 3.2, 3.9], [{x:1}, {x:1.9}, {x:3.1}, {x:4}], ["x"]);
+            let modelTargets = [];
+            let diffSquare = 0;
+            targets.forEach((y,i) => {
+                let model = lr[0] * inputs[i] + lr[1];
+                modelTargets.push(model);
+                diffSquare += Math.pow(model-y, 2);
+            });
+            console.log("testLR coefficients", lr, "model", modelTargets, "diffSquare", diffSquare);
+            if (diffSquare > 0.2) {
+                throw new Error("linear regression test failed");
+            }
+        }
+
+        function tests() {
+            testLinearRegression();
+        }
+
+        // Générer le tableau et le graphique au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            tests();
+
+            preparer();
+            console.log("mois", mois);
+            console.log("années", annees);
+            genererGraphiqueAnnuel();
+            genererGraphiquePrixAnnuel();
+            genererGraphiqueMensuel();
+            genererTableauxBilans();
+        });
+    </script>
+</body>
+</html>

@@ -47,5 +47,15 @@ bilan annuel:
 
 
 TODO
-    mettre à jour les prix du kWh, bois et abonnement
-    bilan CO2
+    + refonte complète du moteur de calcul pour le rendre plus générique, notamment sur les HP/HC, il doit founir des valeurs prêtes à l'emploi pour les graphiques et donner plus de contrôle à la configuration. Il faut éviter le codage d'informations structurantes en dur. La configuration doit avoir un maximum de liberté quand à la production des indicateurs, mêmes indirects.
+    + on laisse le maximum de choix à la configuration pour créer des séries de données qui peuvent ensuite être affichées dans les tableaux et les graphes
+    + ajouter une fonction de non régression de la préparation des données (injection de données, pas de variables globale), il faut bien valider tous les modes de calculs
+    + calculer les coefficients des prévisions sur la base de la dernière année complète
+    + calculer les valeurs mensuelles et annuelles pour tous les échantillons
+    - déplacer les contrôles de validation du format des modèles de valeurs dans une fonction dédiée
+    - définir les tables et graphiques à présenter (colonnes, affichage et tooltip), largeur et hauteur
+    - définir graphes à afficher (séries), les couleurs/styles sont déjà présents dans le modèle, pour assurer la cohérence et éviter les répétitions
+    - permettre de choisir l'année ou la plage de référence pour le calcul de la régression ? nécessite un recalcul de la page
+    - bilan CO2
+    - fond de cellule avec un gradient ?
+
