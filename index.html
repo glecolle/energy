@@ -529,15 +529,13 @@
                     m.totalRaw = value;
                 } else if (valueModel.type == "calc") {
                     // simple computation with data from this record
-                    valueModel.formula = valueModel.formula.replace(/\s+/g, ""); //remove spaces
-
                     let value = Energy.calc(record, valueModel.formula);
                     record[name] = value; // save for future use
                     m.totalRaw = value;
                 } else if (valueModel.type == "reg") {
                     // perform a regression on a yearly basis, this is done later when all data are aggregated
                 }
-                m.days = (record.fin.getTime() - previous.fin.getTime()) / 86400000;
+                m.days = (record.end.getTime() - previous.end.getTime()) / 86400000;
 
                 m.info = `${m.totalRaw} ${valueModel.unit}`;
                 m.samples++;
@@ -559,6 +557,11 @@
                 }
 
                 this.days += timeSpan.days;
+            }
+
+            calc(valueName, valueModel) {
+                this.metrics[valueName].total = Energy.calc(this, valueModel.formula);
+                this.metrics[valueName].update();
             }
         }
 
@@ -703,7 +706,7 @@
                         lastConstants = newConstants;
                     } else {
                         this.records[i].constants = lastConstants;
-                        this.records[i].fin = new Date(this.records[i].date);
+                        this.records[i].end = new Date(this.records[i].date);
                         orderedRecords.push(this.records[i]);
                     }
                 }
@@ -732,22 +735,31 @@
                 let lastFullYear = null;
                 for (let i=0; i < months.length; i++) {
                     let year = months[i].date.getFullYear();
-                    let p;
+                    let ts;
 
                     if (!years[year]) {
-                        p = new TimeSpan(`${months[i].date.getFullYear()}`, months[i].date, months[i].constants);
-                        years[year] = p;
+                        ts = new TimeSpan(`${months[i].date.getFullYear()}`, months[i].date, months[i].constants);
+                        years[year] = ts;
                     } else {
-                        p = years[year];
+                        ts = years[year];
                     }
-                    p.add(months[i]);
+                    ts.add(months[i]);
 
-                    if (p.days >= 365) {
+                    if (ts.days >= 365) {
                         lastFullYear = year;
                     }
                 }
 
-                // compute regression factors on the last full year (or maybe another year choosen by user?)
+                // recompute calc values of years since calc values may not be calculated correctly this way (ratios, by example, cannot be added and neeed to be recomputed on year aggregation level)
+                for (const [year, ts] of Object.entries(years)) {
+                    for (const [valueName, valueModel] of Object.entries(this.values)) {
+                        if (valueModel.type === "calc") {
+                            ts.calc(valueName, valueModel);
+                        }
+                    }
+                }
+
+                // find the last full year to cumpute regression factors (or maybe another year choosen by user?)
                 let dataPerMonth = [];
                 for (let i=0; i < months.length; i++) {
                     if (months[i].name.substring(0,4) != lastFullYear) {
@@ -976,10 +988,15 @@
                     }
                     if (/^[a-zA-Z_]/.test(token)) {
                         consume();
-                        if (!(token in record)) {
-                            fail(`calc: missing property "${token}" in record`);
+                        // manage direct records or TimeSpan structure
+                        if (token in record) {
+                            return record[token];
+                        } else if ("constants" in record && token in record.constants) {
+                            return record.constants[token];
+                        } else if ("metrics" in record && token in record.metrics) {
+                            return record.metrics[token].total;
                         }
-                        return record[token];
+                        fail(`calc: missing property "${token}" in record: ${JSON.stringify(record)}`);
                     }
                     if (/^\d/.test(token)) {
                         consume();
@@ -1293,7 +1310,7 @@
             static testCalc() {
                 let record = {heating: 2.1, water: 5, other: 3.5, total: 10, surface: 35, zero: 0};
                 let formula = "heating + water+other";
-                let failed = false;
+                let failed = null;
                 let v = Energy.calc(record, formula);
                 if (v !== 2.1+5+3.5) {
                     fail(`calc returned ${v} for ${formula}`);
@@ -1347,34 +1364,34 @@
                     fail(`calc returned ${v} for ${formula}`);
                 }
 
+                // calc can also fetch data within a TimeSpan object (for year aggregation level)
+                let timeSpan = new TimeSpan("20226", new Date(), {surface: 100});
+                timeSpan.metrics.heating = {total: 238, unit: "kWh/m²"};
+                formula = "heating / surface";
+                v = Energy.calc(timeSpan, formula);
+                if (v !== 2.38) {
+                   fail(`calc returned ${v} for ${formula}`);
+                }
+
                 formula = "heating + water + missing";
                 try {
                     Energy.calc(record, formula);
-                    failed = true;
+                    failed = `calc should have thrown an error for missing property`;
                 } catch(err) {
-                }
-                if (failed) {
-                    fail(`calc should have thrown an error for missing property`);
                 }
 
                 formula = "heating + water + ";
                 try {
                     Energy.calc(record, formula);
-                    failed = true;
+                    failed = `calc should have thrown an error for invalid formula with missing operand`;
                 } catch(err) {
-                }
-                if (failed) {
-                    fail(`calc should have thrown an error for invalid formula with missing operand`);
                 }
 
                 formula = "heating + *";
                 try {
                     Energy.calc(record, formula);
-                    failed = true;
+                    failed = `calc should have thrown an error for invalid formula with missing operand`;
                 } catch(err) {
-                }
-                if (failed) {
-                    fail(`calc should have thrown an error for invalid formula with missing operand`);
                 }
             }
 
@@ -1410,11 +1427,12 @@
                     dju: {name: "DJU", unit: "DJU", type: "value"},
                     other: {name: "Other", unit: "kWh", type: "calc", formula: "total - heating - water"},
                     heating_forecast: {name: "Heating forecast", unit: "kWh", type: "reg", formula: "heating=A*dju+B", positive: true}, // expect A to be close to 1 and B close to 0
+                    heating_ratio:  {name: "Heating ratio", unit: "%", type: "calc", formula: "heating / total"},
                 };
 
                 let energy = new Energy(records, values, null, null);
                 let ds = energy.prepare();
-                console.debug(ds);
+
                 assertEquals(ds.months[0].name, "2024-12", "first month");
                 assertEquals(ds.months[16].name, "2026-04", "last month");
 
@@ -1477,6 +1495,10 @@
 
                 assertEquals(ds.months[0].metrics.heating_forecast.total, 10.165, "heating forecast total");
                 assertEquals(ds.months[0].metrics.heating_forecast.samples, 1, "heating forecast samples");
+
+                assertEquals(ds.months[0].metrics.heating_ratio.total, (31-10)/(43-20), "heating ratio month");
+                assertEquals(ds.years[2025].metrics.heating_ratio.total, (93-31)/(326-43), "heating ratio year");
+                assertEquals(ds.years[2026].metrics.heating_ratio.total, (122-93)/(429-326), "heating ratio year");
 
                 //TODO validate price calculation
             }
