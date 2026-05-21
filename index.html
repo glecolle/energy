@@ -258,6 +258,13 @@
                             {name: "kWh/pers", metric: "ecs_pers"},
                         ]
                     },
+                    {
+                        name: "Meteo",
+                        columns: [
+                            {name: "🌡", tooltip: "Degrés-jour-Unité, somme de températures en dessous de 18°C", metric: "dju"},
+                            {name: "☀", tooltip: "Nombre d'heures d'ensoleillement", metric: "enso"},
+                        ]
+                    }
                 ]},
                 {title: "Mois",timeUnit: "month", groups: [
                     {
@@ -302,6 +309,9 @@
             color: #333;
             text-align: center;
             margin-bottom: 30px;
+        }
+        h3 {
+            font-size: 105%;
         }
         table {
             width: 100%;
@@ -348,10 +358,9 @@
         }
         .graph-container {
             min-width: 0;
-            margin-bottom: 30px;
         }
         .graph-title {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             color: #333;
         }
         .graph-canvas {
@@ -367,8 +376,8 @@
         .graph-legend-item {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            font-size: 0.85em;
+            gap: 3px;
+            font-size: 0.78em;
         }
         .graph-legend-swatch {
             display: inline-block;
@@ -400,7 +409,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Consommation d'énergie</h1>
+        <h1>Énergie</h1>
         <div id="graphs"></div>
         <div id="tables"></div>
     </div>
@@ -1212,6 +1221,7 @@
                     for (const col of group.columns) {
                         const th = document.createElement('th');
                         th.textContent = col.name;
+                        th.title = col.tooltip ?? "";
                         th.className = 'numeric header-detail';
                         headerRow2.appendChild(th);
                     }
@@ -1262,6 +1272,44 @@
 
                 table.appendChild(tbody);
                 parent.appendChild(table);
+
+                Energy.addTableGradients(table, "#eaeaea");
+            }
+
+            /**
+             * addTableGradients updates a table to add cell gradient.
+             * For each column of tbody (except the first one), evaluate the min and max values and then add a CSS gradient reflecting the cell value.
+             * The gradient is the given color on the right and there is a transition to transparency to the left.
+             * The threshold of transparency is aligned to the right when the value is close to the min and aligned to the left when the value is close to the max.
+             * @param table Element
+             * @param color base color
+             */
+            static addTableGradients(table, color) {
+                const rows = Array.from(table.tBodies[0].rows);
+                if (rows.length === 0) return;
+
+                const colCount = rows[0].cells.length;
+
+                for (let col = 1; col < colCount; col++) {
+                    const values = rows.map(row => parseFloat(row.cells[col]?.textContent));
+                    const numericValues = values.filter(v => !isNaN(v));
+                    if (numericValues.length === 0) continue;
+
+                    const min = Math.min(...numericValues);
+                    const max = Math.max(...numericValues);
+                    const range = max - min;
+
+                    rows.forEach(row => {
+                        const cell = row.cells[col];
+                        if (!cell) return;
+                        const v = parseFloat(cell.textContent);
+                        if (isNaN(v)) return;
+
+                        const stop = range === 0 ? 0 : Math.round(100 * (1 - (v - min) / range));
+                        const transitionEnd = Math.min(stop + 4, 100);
+                        cell.style.background = `linear-gradient(to right, transparent ${stop}%, ${color} ${transitionEnd}%)`;
+                    });
+                }
             }
 
             static testLinearRegression() {
