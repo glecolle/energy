@@ -161,7 +161,7 @@
             {date:"2015-02-01", total_hc:41312, total_hp:74554, chauf_hc:1553, chauf_hp:2232, ecs_hc:1132.9, bois_kg:0, dju: 366.4, enso: 64.7},
 
             {date:"2015-01-01", total_hc:40488, total_hp:73468, chauf_hc:964, chauf_hp:1325, ecs_hc:973.47, bois_kg:0, dju: 341.3, enso: 65.4, facture_elec: 0},
-            {surface: 135, pers: 4}
+            {surface: 135, pers: 4, prix_bois_kwh: 300/1600}
             //{date:"2014-12-01", total_hc:39639, total_hp:72430, chauf_hc:369, chauf_hp:487, ecs_hc:798.06, bois_kg:0, dju: 0, enso: 0},
             //{date:"2014-11-01", total_hc:39087, total_hp:71830, chauf_hc:46, chauf_hp:68, ecs_hc:650.07, bois_kg:0, dju: 0, enso: 0},
             //{date:"2014-10-01", total_hc:38870, total_hp:71624, chauf_hc:0, chauf_hp:0, ecs_hc:542.7, bois_kg:0, dju: 0, enso: 0},
@@ -186,8 +186,6 @@
             values: {
                 dju: {name:"Degrés-jours-unités", unit: "°C", type: "value"},
                 enso: {name:"Ensoleillement", unit: "h", type: "value"},
-
-                prix_elec: {name: "Prix élec.", unit: "€", type: "bill", from: "facture_elec"},
 
                 ecs_hc: {name: "Eau chaude",  unit: "kWh", type: "index", color: "#56B4E9"},
                 chauf_hp: {name: "Chauffage heures pleines",   unit: "kWh", type: "index"},
@@ -214,6 +212,10 @@
 
                 chauf_reg: {name:"Prévision chauffage", unit: "kWh", type: "reg", formula: "chauf=A*dju+B*enso+C", positive: true, color: "#B53E00", dash: true},
                 total: {name: "Total", unit: "kWh", type: "calc", formula: "total_elec+bois"},
+
+                prix_elec: {name: "Prix élec.", unit: "€", type: "bill", from: "facture_elec", color: "#44d"},
+                prix_bois: {name: "Prix bois", unit: "€", type: "calc", formula: "bois * prix_bois_kwh", color: "#ca2"},
+                prix: {name: "Prix", unit: "€", type: "calc", formula: "prix_elec + prix_bois", color: "#000"},
             },
 
             /**
@@ -221,7 +223,7 @@
              */
             graphs: [
                 {title: "Consommations annuelles", unit: "kWh", metrics: ["total", "total_elec", "chauf", "chauf_elec", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "50%", timeUnit: "year"},
-                {title: "Prix annuels", unit: "€", metrics: ["prix_elec"], width: "50%", timeUnit: "year"},
+                {title: "Prix annuels", unit: "€", metrics: ["prix", "prix_elec", "prix_bois"], width: "50%", timeUnit: "year"},
                 {title: "Consommations mensuelles", unit: "kWh", metrics: ["chauf", "ecs_hc", "divers_elec", "bois", "chauf_reg"], width: "100%", timeUnit: "month"},
             ],
 
@@ -231,13 +233,15 @@
              * - metric: associated variable
              * - data: name of metric field to use, total by default but can be byDay, byMonth, byYear, days
              * - tooltip: header column tooltip
+             * - cellTooltip: metric name to use for cell tooltip (can be a raw value for example)
              */
             tables: [
                 {title: "Années", timeUnit: "year", groups: [
                     {
                         name: "Prix",
                         columns: [
-                            {name: "Élec", metric: "prix_elec", data: "byYear", tooltip: "Facture d'électricité (avec projection sur l'année en cours)"},
+                            {name: "Élec", metric: "prix_elec", tooltip: "Facture d'électricité (avec projection sur l'année en cours)"},
+                            {name: "Bois", metric: "prix_bois", tooltip: "Estimation du prix du bois de chauffage"},
                         ]
                     },
                     {
@@ -594,7 +598,7 @@
 
                 m.info = `${m.totalRaw} ${valueModel.unit}`;
                 m.samples++;
-                m.total = m.totalRaw * (typeof valueModel.tokWh != "undefined" ? valueModel.tokWh : 1);
+                m.total = m.totalRaw;
 
                 m.constants = record.constants;
                 m.update();
