@@ -12,8 +12,16 @@
          * Between the records, there may be objects without dates containing constants that remain valid until they are defined again.
          */
         let records = [
-            // prix_hp et prix_hc sont les prix courants pour le calcul du coût des kWh en heures pleines et en heures creuses,  prix_bois est le prix d'une stère de bois en € (environ 400 kg)
-            {date:"2025-09-01", total_hc:29157, total_hp:30067, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ecs_hc:13731.26, bois:0, dju: 28.6, enso: 257.1},
+            {date:"2026-05-01", total_hc:31646, total_hp:32991, chauf_hc:25780, chauf_hp:32600, ev_hp:216, ecs_hc:14646, bois:5, dju: 237.9, enso: 179.7},
+            {date:"2026-04-01", total_hc:31462, total_hp:32829, chauf_hc:25755, chauf_hp:32567, ev_hp:216, ecs_hc:14539, bois:5, dju: 248.2, enso: 73},
+            {date:"2026-03-01", total_hc:31134, total_hp:32519, chauf_hc:25599, chauf_hp:32372, ev_hp:216, ecs_hc:14415, bois:60, dju: 225.8, enso: 65.1},
+            {date:"2026-02-01", total_hc:30779, total_hp:32082, chauf_hc:25407, chauf_hp:32056, ev_hp:216, ecs_hc:14302, bois:155.8, dju: 350, enso: 75},
+
+            {date:"2026-01-01", total_hc:30271, total_hp:31417, chauf_hc:25090, chauf_hp:31517, ev_hp:216, ecs_hc:14171, bois:122, dju: 323.9, enso: 70},
+            {date:"2025-12-01", total_hc:29825, total_hp:30792, chauf_hc:24825, chauf_hp:31026, ev_hp:216, ecs_hc:14042, bois:87.2, dju: 223.6, enso: 91},
+            {date:"2025-11-01", total_hc:29482, total_hp:30381, chauf_hc:24648, chauf_hp:30753, ev_hp:216, ecs_hc:13930, bois:23.8, dju: 144.8, enso: 162.2},
+            {date:"2025-10-01", total_hc:29305, total_hp:30195, chauf_hc:24625, chauf_hp:30706, ev_hp:216, ecs_hc:13829, bois:4, dju: 81.6, enso: 160.2},
+            {date:"2025-09-01", total_hc:29157, total_hp:30067, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ecs_hc:13731.26, bois:0, dju: 28.6, enso: 257.1, facture_elec: 1744},
             {date:"2025-08-01", total_hc:29046, total_hp:29960, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ecs_hc:13662.18, bois:0, dju: 27.5, enso: 232.2},
             {date:"2025-07-01", total_hc:28966, total_hp:29889, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ecs_hc:13617.38, bois:0, dju: 44, enso: 277.7},
             {date:"2025-06-01", total_hc:28835, total_hp:29777, chauf_hc:24624, chauf_hp:30706, ev_hp:216, ecs_hc:13533.12, bois:0, dju: 107.4, enso: 222.1},
@@ -26,7 +34,7 @@
             {date:"2024-12-01", total_hc:26642, total_hp:26993, chauf_hc:23434, chauf_hp:28650, ev_hp:216, ecs_hc:12840.98, bois:85, dju: 249.1, enso: 44.5},
             {date:"2024-11-01", total_hc:26289, total_hp:26530, chauf_hc:23240, chauf_hp:28311, ev_hp:216, ecs_hc:12732.78, bois:46, dju: 128.1, enso: 102.1},
             {date:"2024-10-01", total_hc:26133, total_hp:26404, chauf_hc:23232, chauf_hp:28297, ev_hp:216, ecs_hc:12635.1, bois:0, dju: 84.8, enso: 128.3},
-            {date:"2024-09-01", total_hc:25997, total_hp:26289, chauf_hc:23232, chauf_hp:28297, ev_hp:216, ecs_hc:12548.15, bois:0, dju: 34.1, enso: 222.9},
+            {date:"2024-09-01", total_hc:25997, total_hp:26289, chauf_hc:23232, chauf_hp:28297, ev_hp:216, ecs_hc:12548.15, bois:0, dju: 34.1, enso: 222.9, facture_elec: 1686},
             {date:"2024-08-05", total_hc:25882, total_hp:26182, chauf_hc:23232, chauf_hp:28297, ev_hp:213, ecs_hc:12478.63, bois:0, dju: 40.3, enso: 174.2},
             {date:"2024-07-01", total_hc:25758, total_hp:26079, chauf_hc:23232, chauf_hp:28297, ev_hp:210, ecs_hc:12399.17, bois:0, dju: 81.2, enso: 221.3},
             {date:"2024-06-01", total_hc:25615, total_hp:25972, chauf_hc:23232, chauf_hp:28297, ev_hp:207, ecs_hc:12300.72, bois:0, dju: 117.3, enso: 178.8},
@@ -39,7 +47,7 @@
             {date:"2023-12-01", total_hc:23544, total_hp:23461, chauf_hc:22200, chauf_hp:26402, ev_hp:189, ecs_hc:11670.82, bois:95.8, dju: 232.1, enso: 87.3},
             {date:"2023-11-01", total_hc:23222, total_hp:23093, chauf_hc:22038, chauf_hp:26159, ev_hp:186, ecs_hc:11570.83, bois:28.7, dju: 114.9, enso: 155.5},
             {date:"2023-10-01", total_hc:23062, total_hp:22950, chauf_hc:22024, chauf_hp:26140, ev_hp:183, ecs_hc:11473.36, bois:0, dju: 33.3, enso: 183.8},
-            {date:"2023-09-01", total_hc:22931, total_hp:22839, chauf_hc:22024, chauf_hp:26140, ev_hp:180, ecs_hc:11392.44, bois:0, dju: 32.8, enso: 194.6},
+            {date:"2023-09-01", total_hc:22931, total_hp:22839, chauf_hc:22024, chauf_hp:26140, ev_hp:180, ecs_hc:11392.44, bois:0, dju: 32.8, enso: 194.6, facture_elec: 1491},
             {date:"2023-08-01", total_hc:22820, total_hp:22735, chauf_hc:22024, chauf_hp:26140, ev_hp:177, ecs_hc:11326.77, bois:0, dju: 33.3, enso: 184.5},
             {date:"2023-07-01", total_hc:22697, total_hp:22633, chauf_hc:22024, chauf_hp:26140, ev_hp:174, ecs_hc:11252.64, bois:0, dju: 32, enso: 300.7},
             {date:"2023-06-01", total_hc:22564, total_hp:22525, chauf_hc:22024, chauf_hp:26140, ev_hp:171, ecs_hc:11167.4, bois:0, dju: 114.9, enso: 263.2},
@@ -52,7 +60,7 @@
             {date:"2022-12-01", total_hc:20207, total_hp:19644, chauf_hc:20894, chauf_hp:23977, ev_hp:153, ecs_hc:10510.8, bois:66.8, dju:209.1, enso: 120.7},
             {date:"2022-11-01", total_hc:19830, total_hp:19298, chauf_hc:20710, chauf_hp:23771, ev_hp:150, ecs_hc:10408.77, bois:0, dju:73.6, enso: 112.8},
             {date:"2022-10-01", total_hc:19655, total_hp:19136, chauf_hc:20707, chauf_hp:23771, ev_hp:147, ecs_hc:10304.97, bois:0, dju:72.7, enso: 168.4},
-            {date:"2022-09-01", total_hc:19504, total_hp:18996, chauf_hc:20707, chauf_hp:23771, ev_hp:144, ecs_hc:10218.63, bois:0, dju:21.8, enso: 261.6},
+            {date:"2022-09-01", total_hc:19504, total_hp:18996, chauf_hc:20707, chauf_hp:23771, ev_hp:144, ecs_hc:10218.63, bois:0, dju:21.8, enso: 261.6, facture_elec: 1492},
             {date:"2022-08-01", total_hc:19381, total_hp:18862, chauf_hc:20707, chauf_hp:23771, ev_hp:141, ecs_hc:10155, bois:0, dju:36, enso: 340.6},
             {date:"2022-07-01", total_hc:19276, total_hp:18757, chauf_hc:20707, chauf_hp:23771, ev_hp:138, ecs_hc:10100.87, bois:0, dju:51, enso: 235.3},
             {date:"2022-06-01", total_hc:19130, total_hp:18624, chauf_hc:20707, chauf_hp:23771, ev_hp:135, ecs_hc:10011.73, bois:0, dju:101.4, enso: 244.8},
@@ -65,7 +73,7 @@
             {date:"2021-12-01", total_hc:16241, total_hp:15951, chauf_hc:18993, chauf_hp:22051, ev_hp:117, ecs_hc:9243.5, bois:103, dju: 304.8, enso: 110.5},
             {date:"2021-11-01", total_hc:15713, total_hp:15427, chauf_hc:18649, chauf_hp:21719, ev_hp:114, ecs_hc:9123.04, bois:15, dju: 149.8, enso: 178.1},
             {date:"2021-10-01", total_hc:15490, total_hp:15217, chauf_hc:18608, chauf_hp:21677, ev_hp:111, ecs_hc:9006.78, bois:0, dju: 54.5, enso: 206},
-            {date:"2021-09-01", total_hc:15327, total_hp:15077, chauf_hc:18608, chauf_hp:21677, ev_hp:108, ecs_hc:8909.14, bois:0, dju: 48.3, enso: 176.5},
+            {date:"2021-09-01", total_hc:15327, total_hp:15077, chauf_hc:18608, chauf_hp:21677, ev_hp:108, ecs_hc:8909.14, bois:0, dju: 48.3, enso: 176.5, facture_elec: 1634},
             {date:"2021-08-01", total_hc:15199, total_hp:14942, chauf_hc:18608, chauf_hp:21677, ev_hp:105, ecs_hc:8836.87, bois:0, dju: 34.5, enso: 199.5},
             {date:"2021-07-01", total_hc:15086, total_hp:14836, chauf_hc:18608, chauf_hp:21677, ev_hp:102, ecs_hc:8773.37, bois:0, dju: 59.9, enso: 189.4},
             {date:"2021-06-01", total_hc:14931, total_hp:14709, chauf_hc:18608, chauf_hp:21677, ev_hp:99, ecs_hc:8676.47, bois:0, dju: 168.4, enso: 201.8},
@@ -77,69 +85,69 @@
             {date:"2021-01-01", total_hc:12188, total_hp:12084, chauf_hc:16849, chauf_hp:19909, ev_hp:84, ecs_hc:8025.94, bois:0, dju: 329.2, enso: 70.2},
             {date:"2020-12-01", total_hc:11400, total_hp:11240, chauf_hc:16280, chauf_hp:19292, ev_hp:81, ecs_hc:7883.9, bois:0, dju: 219.9, enso: 109.8},
             {date:"2020-11-01", total_hc:10921, total_hp:10815, chauf_hc:15977, chauf_hp:19057, ev_hp:78, ecs_hc:7773.79, bois:0, dju: 166.6, enso: 96.5},
-            {date:"2020-10-01", total_hc:10648, total_hp:10537, chauf_hc:15866, chauf_hp:18944, ev_hp:75, ecs_hc:7677.07, bois:0, dju: 67.3, enso: 184.2},
+            {date:"2020-10-01", total_hc:10648, total_hp:10537, chauf_hc:15866, chauf_hp:18944, ev_hp:75, ecs_hc:7677.07, bois:0, dju: 67.3, enso: 184.2, facture_elec: 49+21},
             {date:"2020-09-01", total_hc:10495, total_hp:10402, chauf_hc:15866, chauf_hp:18944, ev_hp:72, ecs_hc:7586.71, bois:0, dju: 34.5, enso: 214.5},
-            {date:"2020-08-01", total_hc:10358, total_hp:10260, chauf_hc:15866, chauf_hp:18944, ev_hp:69, ecs_hc:7509.12, bois:0, dju: 48.4, enso: 267},
+            {date:"2020-08-01", total_hc:10358, total_hp:10260, chauf_hc:15866, chauf_hp:18944, ev_hp:69, ecs_hc:7509.12, bois:0, dju: 48.4, enso: 267, facture_elec: 108},
             {date:"2020-07-01", total_hc:10261, total_hp:10165, chauf_hc:15866, chauf_hp:18944, ev_hp:66, ecs_hc:7458.13, bois:0, dju: 70, enso: 176.3},
-            {date:"2020-06-01", total_hc:10107, total_hp:10024, chauf_hc:15866, chauf_hp:18944, ev_hp:63, ecs_hc:7363.13, bois:0, dju: 107.5, enso: 311.9},
+            {date:"2020-06-01", total_hc:10107, total_hp:10024, chauf_hc:15866, chauf_hp:18944, ev_hp:63, ecs_hc:7363.13, bois:0, dju: 107.5, enso: 311.9, facture_elec: 180},
             {date:"2020-05-01", total_hc:9941, total_hp:9872, chauf_hc:15866, chauf_hp:18944, ev_hp:60, ecs_hc:7257.2, bois:0, dju: 139.3, enso: 224.2},
-            {date:"2020-04-01", total_hc:9730, total_hp:9677, chauf_hc:15835, chauf_hp:18910, ev_hp:57, ecs_hc:7145.41, bois:0, dju: 275.3, enso: 170.5},
+            {date:"2020-04-01", total_hc:9730, total_hp:9677, chauf_hc:15835, chauf_hp:18910, ev_hp:57, ecs_hc:7145.41, bois:0, dju: 275.3, enso: 170.5, facture_elec: 384},
             {date:"2020-03-01", total_hc:9178, total_hp:9175, chauf_hc:15486, chauf_hp:18571, ev_hp:54, ecs_hc:7013.24, bois:0, dju: 249.4, enso: 89.4},
-            {date:"2020-02-01", total_hc:8576, total_hp:8620, chauf_hc:15074, chauf_hp:18175, ev_hp:51, ecs_hc:6893.06, bois:0, dju: 319.3, enso: 87.8},
+            {date:"2020-02-01", total_hc:8576, total_hp:8620, chauf_hc:15074, chauf_hp:18175, ev_hp:51, ecs_hc:6893.06, bois:0, dju: 319.3, enso: 87.8, facture_elec: 428},
 
             {date:"2020-01-01", total_hc:7850, total_hp:7847, chauf_hc:14539, chauf_hp:17565, ev_hp:48, ecs_hc:6768.85, bois:0, dju: 326.2, enso: 89.6},
-            {date:"2019-12-01", total_hc:7125, total_hp:7029, chauf_hc:14011, chauf_hp:16913, ev_hp:45, ecs_hc:6640.78, bois:0, dju: 286.5, enso: 83.2},
-            {date:"2019-11-01", total_hc:6482, total_hp:6383, chauf_hc:13546, chauf_hp:16428, ev_hp:42, ecs_hc:6526.36, bois:0, dju: 132.9, enso: 79.1},
+            {date:"2019-12-01", total_hc:7125, total_hp:7029, chauf_hc:14011, chauf_hp:16913, ev_hp:45, ecs_hc:6640.78, bois:0, dju: 286.5, enso: 83.2, facture_elec: 124},
+            {date:"2019-11-01", total_hc:6482, total_hp:6383, chauf_hc:13546, chauf_hp:16428, ev_hp:42, ecs_hc:6526.36, bois:0, dju: 132.9, enso: 79.1, facture_elec: 101},
             {date:"2019-10-01", total_hc:6217, total_hp:6128, chauf_hc:13442, chauf_hp:16322, ev_hp:39, ecs_hc:6435.97, bois:0, dju: 66.6, enso: 197.8},
-            {date:"2019-09-01", total_hc:6073, total_hp:6006, chauf_hc:13442, chauf_hp:16322, ev_hp:36, ecs_hc:6347.07, bois:0, dju: 39.1, enso: 211.5},
+            {date:"2019-09-01", total_hc:6073, total_hp:6006, chauf_hc:13442, chauf_hp:16322, ev_hp:36, ecs_hc:6347.07, bois:0, dju: 39.1, enso: 211.5, facture_elec: 86},
             {date:"2019-08-02", total_hc:5942, total_hp:5894, chauf_hc:13442, chauf_hp:16322, ev_hp:33, ecs_hc:6277.03, bois:0, dju: 27.6, enso: 333.6},
-            {date:"2019-07-01", total_hc:5853, total_hp:5810, chauf_hc:13437, chauf_hp:16319, ev_hp:30, ecs_hc:6231.12, bois:0, dju: 72.7, enso: 216.7},
+            {date:"2019-07-01", total_hc:5853, total_hp:5810, chauf_hc:13437, chauf_hp:16319, ev_hp:30, ecs_hc:6231.12, bois:0, dju: 72.7, enso: 216.7, facture_elec: 128},
             {date:"2019-06-01", total_hc:5697, total_hp:5684, chauf_hc:13437, chauf_hp:16319, ev_hp:27, ecs_hc:6137.3, bois:0, dju: 160.1, enso: 194.3},
-            {date:"2019-05-01", total_hc:5463, total_hp:5521, chauf_hc:13359, chauf_hp:16271, ev_hp:24, ecs_hc:6045.56, bois:0, dju: 219.8, enso: 188.7},
+            {date:"2019-05-01", total_hc:5463, total_hp:5521, chauf_hc:13359, chauf_hp:16271, ev_hp:24, ecs_hc:6045.56, bois:0, dju: 219.8, enso: 188.7, facture_elec: 268},
             {date:"2019-04-01", total_hc:5141, total_hp:5269, chauf_hc:13180, chauf_hp:16126, ev_hp:21, ecs_hc:5956.77, bois:0, dju: 254.3, enso: 158.5},
-            {date:"2019-03-01", total_hc:4588, total_hp:4876, chauf_hc:12820, chauf_hp:15879, ev_hp:18, ecs_hc:5834.77, bois:0, dju: 285.3, enso: 144.7},
+            {date:"2019-03-01", total_hc:4588, total_hp:4876, chauf_hc:12820, chauf_hp:15879, ev_hp:18, ecs_hc:5834.77, bois:0, dju: 285.3, enso: 144.7, facture_elec: 493},
             {date:"2019-02-01", total_hc:3993, total_hp:4256, chauf_hc:12394, chauf_hp:15397, ev_hp:15, ecs_hc:5732.12, bois:0, dju: 390.3, enso: 65.5},
 
-            {date:"2019-01-01", total_hc:3132, total_hp:3254, chauf_hc:11738, chauf_hp:14570, ev_hp:12, ecs_hc:5599.35, bois:0, dju: 292.9, enso: 49.3},
+            {date:"2019-01-01", total_hc:3132, total_hp:3254, chauf_hc:11738, chauf_hp:14570, ev_hp:12, ecs_hc:5599.35, bois:0, dju: 292.9, enso: 49.3, facture_elec: 310},
             {date:"2018-12-01", total_hc:2450, total_hp:2409, chauf_hc:11247, chauf_hp:13931, ev_hp:10, ecs_hc:5477.27, bois:0, dju: 275, enso: 107.3},
-            {date:"2018-11-01", total_hc:1874, total_hp:1758, chauf_hc:10845, chauf_hp:13458, ev_hp:7, ecs_hc:5369.86, bois:0, dju: 161.3, enso: 173.9},
+            {date:"2018-11-01", total_hc:1874, total_hp:1758, chauf_hc:10845, chauf_hp:13458, ev_hp:7, ecs_hc:5369.86, bois:0, dju: 161.3, enso: 173.9, facture_elec: 97},
             {date:"2018-10-01", total_hc:1617, total_hp:1516, chauf_hc:10745, chauf_hp:13353, ev_hp:4, ecs_hc:5275.68, bois:0, dju: 82.1, enso: 236.8},
-            {date:"2018-09-01", total_hc:1478, total_hp:1393, chauf_hc:10745, chauf_hp:13353, ev_hp:1, ecs_hc:5196.91, bois:0, dju: 42.7, enso: 209},
+            {date:"2018-09-01", total_hc:1478, total_hp:1393, chauf_hc:10745, chauf_hp:13353, ev_hp:1, ecs_hc:5196.91, bois:0, dju: 42.7, enso: 209, facture_elec: 82},
             {date:"2018-08-01", total_hc:1350, total_hp:1267, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ecs_hc:5129.79, bois:0, dju: 21.8, enso: 42.7},
-            {date:"2018-07-02", total_hc:1263, total_hp:1178, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ecs_hc:5085.45, bois:0, dju: 39.3, enso: 224.3},
+            {date:"2018-07-02", total_hc:1263, total_hp:1178, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ecs_hc:5085.45, bois:0, dju: 39.3, enso: 224.3, facture_elec: 105},
             {date:"2018-06-01", total_hc:1126, total_hp:1057, chauf_hc:10745, chauf_hp:13353, ev_hp:0, ecs_hc:5000.78, bois:0, dju: 129.9, enso: 286.4},
-            {date:"2018-05-01", total_hc:1000, total_hp:940, chauf_hc:10744, chauf_hp:13350, ev_hp:0, ecs_hc:4931.05, bois:0, dju: 177.4, enso: 172},
+            {date:"2018-05-01", total_hc:1000, total_hp:940, chauf_hc:10744, chauf_hp:13350, ev_hp:0, ecs_hc:4931.05, bois:0, dju: 177.4, enso: 172, facture_elec: 336},
             {date:"2018-04-01", total_hc:709, total_hp:700, chauf_hc:10613, chauf_hp:13241, ev_hp:0, ecs_hc:4834.7, bois:0, dju: 316.7, enso: 89.2},
-            {date:"2018-03-01", total_hc:76, total_hc_init:-848+76, total_hp:79,  total_hp_init:-895+79, chauf_hc:10147, chauf_hp:12755, ev_hp:0, ecs_hc:4731.71, bois:0, dju: 393.1, enso: 133.6},
+            {date:"2018-03-01", total_hc:76, total_hc_init:-848+76, total_hp:79,  total_hp_init:-895+79, chauf_hc:10147, chauf_hp:12755, ev_hp:0, ecs_hc:4731.71, bois:0, dju: 393.1, enso: 133.6, facture_elec: 451},
             {date:"2018-02-01", total_hc:55016, total_hp:89066, chauf_hc:9471, chauf_hp:11999, ev_hp:0, ecs_hc:4616.74, bois:0, dju: 295.8, enso: 46.5},
 
-            {date:"2018-01-01", total_hc:54294, total_hp:88324, chauf_hc:8937, chauf_hp:11412, ev_hp:0, ecs_hc:4503.37, bois:0, dju: 340, enso: 54.7, facture_elec: 1480},
+            {date:"2018-01-01", total_hc:54294, total_hp:88324, chauf_hc:8937, chauf_hp:11412, ev_hp:0, ecs_hc:4503.37, bois:0, dju: 340, enso: 54.7, facture_elec: 273},
             {date:"2017-12-01", total_hc:53526, total_hp:87407, chauf_hc:8355, chauf_hp:10655, ev_hp:0, ecs_hc:4386.63, bois:0, dju: 290.8, enso: 80.4},
-            {date:"2017-11-01", total_hc:52923, total_hp:86759, chauf_hc:7933, chauf_hp:10178, ev_hp:0, ecs_hc:4277.89, bois:0, dju: 125.8, enso: 98},
+            {date:"2017-11-01", total_hc:52923, total_hp:86759, chauf_hc:7933, chauf_hp:10178, ev_hp:0, ecs_hc:4277.89, bois:0, dju: 125.8, enso: 98, facture_elec: 177},
             {date:"2017-10-01", total_hc:52689, total_hp:86530, chauf_hc:7860, chauf_hp:10096, ev_hp:0, ecs_hc:4187.38, bois:0, dju: 102.2, enso: 125.8},
-            {date:"2017-09-01", total_hc:52542, total_hp:86408, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ecs_hc:4102.79, bois:0, dju: 43.4, enso: 189.5},
+            {date:"2017-09-01", total_hc:52542, total_hp:86408, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ecs_hc:4102.79, bois:0, dju: 43.4, enso: 189.5, facture_elec: -85},
             {date:"2017-08-01", total_hc:52403, total_hp:86278, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ecs_hc:4035, bois:0, dju: 31.8, enso: 196.9},
-            {date:"2017-07-01", total_hc:52326, total_hp:86207, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ecs_hc:3981.69, bois:0, dju: 51.5, enso: 269.2},
+            {date:"2017-07-01", total_hc:52326, total_hp:86207, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ecs_hc:3981.69, bois:0, dju: 51.5, enso: 269.2, facture_elec: 216},
             {date:"2017-06-01", total_hc:52201, total_hp:86104, chauf_hc:7859, chauf_hp:10095, ev_hp:0, ecs_hc:3910.28, bois:0, dju: 111.2, enso: 210.1},
-            {date:"2017-05-01", total_hc:52011, total_hp:85977, chauf_hc:7821, chauf_hp:10072, ev_hp:0, ecs_hc:3819.77, bois:0, dju: 237.1, enso: 225.7},
+            {date:"2017-05-01", total_hc:52011, total_hp:85977, chauf_hc:7821, chauf_hp:10072, ev_hp:0, ecs_hc:3819.77, bois:0, dju: 237.1, enso: 225.7, facture_elec: 298},
             {date:"2017-04-01", total_hc:51687, total_hp:85726, chauf_hc:7657, chauf_hp:9951, ev_hp:0, ecs_hc:3724.52, bois:0, dju: 233.1, enso: 113.9},
-            {date:"2017-03-01", total_hc:51189, total_hp:85308, chauf_hc:7335, chauf_hp:9670, ev_hp:0, ecs_hc:3616.67, bois:0, dju: 284.4, enso: 78.6},
+            {date:"2017-03-01", total_hc:51189, total_hp:85308, chauf_hc:7335, chauf_hp:9670, ev_hp:0, ecs_hc:3616.67, bois:0, dju: 284.4, enso: 78.6, facture_elec: 488},
             {date:"2017-02-01", total_hc:50592, total_hp:84618, chauf_hc:6898, chauf_hp:9123, ev_hp:0, ecs_hc:3514.76, bois:0, dju: 446.4, enso: 94.5},
 
-            {date:"2017-01-01", total_hc:49654, total_hp:83515, chauf_hc:6160, chauf_hp:8170, ev_hp:0, ecs_hc:3384.49, bois:0, dju: 379.9, enso: 66.9, facture_elec: 1450},
+            {date:"2017-01-01", total_hc:49654, total_hp:83515, chauf_hc:6160, chauf_hp:8170, ev_hp:0, ecs_hc:3384.49, bois:0, dju: 379.9, enso: 66.9, facture_elec: 277},
             {date:"2016-12-01", total_hc:48903, total_hp:82487, chauf_hc:5599, chauf_hp:7310, ev_hp:0, ecs_hc:3267.48, bois:0, dju: 286.1, enso: 98.4},
-            {date:"2016-11-01", total_hc:48306, total_hp:81904, chauf_hc:5173, chauf_hp:6888, ev_hp:0, ecs_hc:3164.11, bois:0, dju: 203.7, enso: 140.5},
+            {date:"2016-11-01", total_hc:48306, total_hp:81904, chauf_hc:5173, chauf_hp:6888, ev_hp:0, ecs_hc:3164.11, bois:0, dju: 203.7, enso: 140.5, facture_elec: 179},
             {date:"2016-10-01", total_hc:48000, total_hp:81575, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:3075.68, bois:0, dju: 41.9, enso: 155.8},
-            {date:"2016-09-01", total_hc:47876, total_hp:81462, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:3005.94, bois:0, dju: 40, enso: 268.1},
+            {date:"2016-09-01", total_hc:47876, total_hp:81462, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:3005.94, bois:0, dju: 40, enso: 268.1, facture_elec: 14},
             {date:"2016-08-01", total_hc:47741, total_hp:81345, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:2929.75, bois:0, dju: 48.4, enso: 221.4},
-            {date:"2016-07-01", total_hc:47644, total_hp:81263, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:2873.46, bois:0, dju: 63.9, enso: 90.5},
+            {date:"2016-07-01", total_hc:47644, total_hp:81263, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:2873.46, bois:0, dju: 63.9, enso: 90.5, facture_elec: 201},
             {date:"2016-06-01", total_hc:47501, total_hp:81157, chauf_hc:5022, chauf_hp:6703, ev_hp:0, ecs_hc:2789.19, bois:0, dju: 128.2, enso: 171},
-            {date:"2016-05-01", total_hc:47323, total_hp:81029, chauf_hc:5006, chauf_hp:6695, ev_hp:0, ecs_hc:2693.51, bois:0, dju: 259.1, enso: 165.1},
+            {date:"2016-05-01", total_hc:47323, total_hp:81029, chauf_hc:5006, chauf_hp:6695, ev_hp:0, ecs_hc:2693.51, bois:0, dju: 259.1, enso: 165.1, facture_elec: 321},
             {date:"2016-04-01", total_hc:46880, total_hp:80667, chauf_hc:4728, chauf_hp:6455, ev_hp:0, ecs_hc:2592.64, bois:0, dju: 330.4, enso: 137.4},
-            {date:"2016-03-01", total_hc:46224, total_hp:80038, chauf_hc:4273, chauf_hp:5977, ev_hp:0, ecs_hc:2464.76, bois:0, dju: 315, enso: 105.8},
+            {date:"2016-03-01", total_hc:46224, total_hp:80038, chauf_hc:4273, chauf_hp:5977, ev_hp:0, ecs_hc:2464.76, bois:0, dju: 315, enso: 105.8, facture_elec: 446},
             {date:"2016-02-01", total_hc:45604, total_hp:79245, chauf_hc:3830, chauf_hp:5331, ev_hp:0, ecs_hc:2354.29, bois:0, dju: 336.3, enso: 59.4},
 
-            {date:"2016-01-01", total_hc:44880, total_hp:78308, chauf_hc:3299, chauf_hp:4547, ev_hp:0, ecs_hc:2242.38, bois:0, dju: 234.6, enso: 75.7, facture_elec: 1400},
+            {date:"2016-01-01", total_hc:44880, total_hp:78308, chauf_hc:3299, chauf_hp:4547, ev_hp:0, ecs_hc:2242.38, bois:0, dju: 234.6, enso: 75.7, facture_elec: 0},
             {date:"2015-12-01", total_hc:44388, total_hp:77741, chauf_hc:2962, chauf_hp:4135, ev_hp:0, ecs_hc:2152.92, bois:0, dju: 181.1, enso: 76.8},
             {date:"2015-11-01", total_hc:44018, total_hp:77350, chauf_hc:2748, chauf_hp:3895, ev_hp:0, ecs_hc:2061.12, bois:0, dju: 176.3, enso: 112},
             {date:"2015-10-01", total_hc:43718, total_hp:77049, chauf_hc:2605, chauf_hp:3746, ev_hp:0, ecs_hc:1973.15, bois:0, dju: 108.9, enso: 203.6},
@@ -151,7 +159,8 @@
             {date:"2015-04-01", total_hc:42687, total_hp:76214, chauf_hc:2479, chauf_hp:3594, ev_hp:0, ecs_hc:1437.56, bois:0, dju: 299, enso: 129.5},
             {date:"2015-03-01", total_hc:42057, total_hp:75540, chauf_hc:2086, chauf_hp:3074, ev_hp:0, ecs_hc:1276.76, bois:0, dju: 363.7, enso: 108.8},
             {date:"2015-02-01", total_hc:41312, total_hp:74554, chauf_hc:1553, chauf_hp:2232, ev_hp:0, ecs_hc:1132.9, bois:0, dju: 366.4, enso: 64.7},
-            {date:"2015-01-01", total_hc:40488, total_hp:73468, chauf_hc:964, chauf_hp:1325, ev_hp:0, ecs_hc:973.47, bois:0, dju: 341.3, enso: 65.4},
+
+            {date:"2015-01-01", total_hc:40488, total_hp:73468, chauf_hc:964, chauf_hp:1325, ev_hp:0, ecs_hc:973.47, bois:0, dju: 341.3, enso: 65.4, facture_elec: 0},
             {surface: 135, pers: 4}
             //{date:"2014-12-01", total_hc:39639, total_hp:72430, chauf_hc:369, chauf_hp:487, ev_hp:0, ecs_hc:798.06, bois:0, dju: 0, enso: 0},
             //{date:"2014-11-01", total_hc:39087, total_hp:71830, chauf_hc:46, chauf_hp:68, ev_hp:0, ecs_hc:650.07, bois:0, dju: 0, enso: 0},
@@ -194,9 +203,10 @@
 
                 bois: {name: "Bois", unit: "kg",  type: "value", tokWh: 4.1, color: "#8B4513", dash: true},
                 chauf: {name: "Chauffage", unit: "kWh", type: "calc", formula: "chauf_elec + bois", color: "#D55E00"},
+                ratio_bois_total: {name: "Ratio bois", unit: "%", type: "calc", formula: "100 * bois / chauf"},
                 chauf_surface: {name: "Chauffage/surface", unit: "kWh/m²", type: "calc", formula: "chauf / surface"},
 
-                co2: {name: "CO₂", unit: "kg", type: "calc", formula: "total_elec*50"},
+                co2: {name: "CO₂", unit: "kg", type: "calc", formula: "total_elec*0.016"}, // 16g C02 par kWh -> https://www.edf.fr/groupe-edf/agir-pour-le-climat/responsabilite-societale-d-entreprise/rapports-et-indicateurs/emissions-de-gaz-a-effet-de-serre/nos-emissions-en-france-continentale
                 pers: {name: "Nombre de personnes", unit: "", type: "value"},
                 ecs_pers: {name: "ECS/pers", unit: "kWh", type: "calc", formula: "ecs_hc/pers"},
                 energie_surface: {name: "Élec/surface", unit: "kWh", type: "calc", formula: "(total_elec+bois)/surface"},
@@ -226,7 +236,7 @@
                     {
                         name: "Prix",
                         columns: [
-                            {name: "Élec", metric: "prix_elec", tooltip: "Facture d'électricité"},
+                            {name: "Élec", metric: "prix_elec", data: "byYear", tooltip: "Facture d'électricité (avec projection sur l'année en cours)"},
                         ]
                     },
                     {
@@ -234,6 +244,7 @@
                         columns: [
                             {name: "kWh", metric: "total", tooltip: "Consommation totale d'énergie"},
                             {name: "Ratio HC", metric: "ratio_total_hc", tooltip: "Utilisation d'électricité en heures creuses"},
+                            {name: "CO₂", metric: "co2", tooltip: "Bilan carbone associé"},
                         ]
                     },
                     {
@@ -241,6 +252,7 @@
                         columns: [
                             {name: "Élec", metric: "chauf_elec", tooltip: "Consommation électrique associée au chauffage"},
                             {name: "Bois", metric: "bois", tooltip: "Apport du bois comme chauffage"},
+                            {name: "Ratio bois", metric: "ratio_bois_total", tooltip: "Part du chauffage au bois"},
                             {name: "Total", metric: "chauf", tooltip: "Électicité + bois"},
                             {name: "Prévision", metric: "chauf_reg", tooltip: "Prévision du chauffage nécessaire en fonction des températures et de l'ensoleillement à partir de l'année de référence"},
                             {name: "kWh/m²", metric: "chauf_surface", tooltip: "Chauffage total par unité de surface"},
@@ -470,8 +482,19 @@
 
             update() {
                 this.byDay = this.total / this.days;
-                this.byMonth = this.byDay * 30.44;
-                this.byYear = this.byDay * 365.25;
+
+                if (this.days >= 28 || this.days <= 31) {
+                    this.byMonth = this.total; // it's already the total for a month
+                } else {
+                    this.byMonth = this.byDay * 30.44;
+                }
+
+                if (this.days >= 365) {
+                    this.byYear = this.total; // it's already the total for a year
+                } else {
+                    this.byYear = this.byDay * 365.25;
+                }
+
                 this.info = `${Math.round(this.totalRaw*10)/10} ${this.unit}`;
             }
 
@@ -705,8 +728,8 @@
                         fail(`missing formula for ${name}, required for ${valueModel.type} type`);
                     }
                     valueModel.formula = valueModel.formula.replace(/\s+/g, ""); //remove all spaces
-                    if (!/^[\(\)]*\w+([-+*/]\w+[\(\)]*)+$/.test(valueModel.formula)) {
-                        fail(`wrong formula format for varibale '${name}' with type '${valueModel.type}', got: ${valueModel.formula} expected something like: (var_a+var_b)-var_c*var_d`);
+                    if (!/^[\(\)]*([a-z]\w*|[\.\d]+)([-+*/]([a-z]\w*|[\.\d]+)[\(\)]*)+$/.test(valueModel.formula)) {
+                        fail(`wrong formula format for variable '${name}' with type '${valueModel.type}', got: ${valueModel.formula} expected something like: (var_a+var_b)-var_c*var_d`);
                     }
                 }
 
@@ -759,6 +782,7 @@
                     }
                 }
 
+                // copy constants
                 for (let i = this.records.length-1; i >= 0 ; i--) {
                     if (typeof this.records[i].date === "undefined") {
                         let newConstants = JSON.parse(JSON.stringify(this.records[i]));
@@ -1443,6 +1467,12 @@
                     fail(`calc returned ${v} for ${formula}`);
                 }
 
+                formula = "heating + other /2.5";
+                v = Energy.calc(record, formula);
+                if (v !== 2.1+3.5/2.5) {
+                    fail(`calc returned ${v} for ${formula}`);
+                }
+
                 formula = "heating + water +other/surface";
                 v = Energy.calc(record, formula);
                 if (v !== 2.1+5+3.5/35) {
@@ -1584,7 +1614,7 @@
                 assertEquals(ds.months[0].constants.people, 4, "people constant first month");
                 assertEquals(ds.months[14].constants.people, 3, "people constant update 1");
                 assertEquals(ds.months[15].constants.people, 3, "people constant update 2");
-                assertEquals(ds.months[15].constants.people, 3, "people constant update 3");
+                assertEquals(ds.months[16].constants.people, 3, "people constant update 3");
 
                 assertEquals(ds.years[2024].name, "2024", "first year");
                 assertEquals(ds.years[2026].name, "2026", "last year");

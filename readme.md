@@ -57,7 +57,8 @@ TODO
     + définir graphes à afficher (séries), les couleurs/styles sont déjà présents dans le modèle, pour assurer la cohérence et éviter les répétitions
     + fond de cellule avec un gradient ?
     + calculer le prix avec un nouveau type de variable "bill" + champ from qui doit être ventilé sur les records précédents ne contenant pas target
-    - ajouter les prix des factures d'électricité réelles
+    + lors de la propagation des constantes, remplacer les nouvelles constantes mais ajouter les précédentes également
+    + ajouter les prix des factures d'électricité réelles
+    + bilan CO2
     - permettre de choisir l'année ou la plage de référence pour le calcul de la régression ? nécessite un recalcul de la page
-    - bilan CO2
 
