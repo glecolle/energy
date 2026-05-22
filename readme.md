@@ -1,8 +1,10 @@
 # Energy
 
+Energy is a monopage client application (no server) allowing to process and display statements.
+
 ## Comment gérer le tarif de l'électricité ? -> avoir une ligne avec les tarifs quand ils évoluent
 
-donnée globales:
+données globales:
     - surface m²
     - surface vitrage pour chauffage solaire
     - prix kWh HP/HC
