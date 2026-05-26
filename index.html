@@ -814,7 +814,6 @@
 
                 // build list of years
                 let years = {};
-                let lastFullYear = null;
                 for (let i=0; i < months.length; i++) {
                     let year = months[i].date.getFullYear();
                     let ts;
@@ -826,12 +825,7 @@
                         ts = years[year];
                     }
                     ts.add(months[i]);
-
-                    if (ts.days >= 365) {
-                        lastFullYear = year;
-                    }
                 }
-                console.log("last full year", lastFullYear);
 
                 // recompute calc values of years since calc values may not be calculated correctly this way (ratios, by example, cannot be added and neeed to be recomputed on year aggregation level)
                 for (const [year, ts] of Object.entries(years)) {
@@ -842,15 +836,8 @@
                     }
                 }
 
-                // find the last full year to cumpute regression factors (or maybe another year choosen by user?)
-                let dataPerMonth = [];
-                for (let i=0; i < months.length; i++) {
-                    if (months[i].name.substring(0,4) != lastFullYear) {
-                        continue;
-                    }
-
-                    dataPerMonth.push(months[i]);
-                }
+                // take the last 2 years as a reference
+                let regressionSample = months.slice(Math.max(0, months.length-1-24), months.length-1);
 
                 // linear regression for each variable of type reg
                 for (const [name, valueModel] of Object.entries(this.values)) {
@@ -863,11 +850,11 @@
 
                     let target = parts.shift();
                     let labels = parts;
-                    //console.log("linear regression on", lastFullYear, "formula:", valueModel.formula, "target:", target, "labels:", labels);
+                    //console.log("linear regression formula:", valueModel.formula, "target:", target, "labels:", labels);
 
                     let inputs = [];
                     let targetValues = [];
-                    dataPerMonth.forEach((m, i) => {
+                    regressionSample.forEach((m, i) => {
                         if (valueModel.positive && m.metrics[target].total <= 0.001) {
                             return; // ignore negative values for linear regression training
                         }
@@ -1638,7 +1625,7 @@
                 assertEquals(ds.years[2025].metrics.wood.samples, 12, "wood samples 2025");
                 assertEquals(ds.years[2025].metrics.wood_kg.info, "Total : 135 kg\nPar jour : 0.4 kg", "wood info 2025");
 
-                assertEquals(ds.months[0].metrics.heating_forecast.total, 10.165, "heating forecast total");
+                assertEquals(ds.months[0].metrics.heating_forecast.total, 10.98, "heating forecast total");
                 assertEquals(ds.months[0].metrics.heating_forecast.samples, 1, "heating forecast samples");
 
                 assertEquals(ds.months[0].metrics.heating_ratio.total, (31-10)/(43-20), "heating ratio month");
