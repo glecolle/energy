@@ -373,17 +373,6 @@
         .numeric {
             text-align: right;
         }
-        .cout {
-            color: #d63384;
-            font-weight: bold;
-        }
-        .percentage {
-            color: #198754;
-        }
-        .error {
-            background-color: #dc3545;
-            color: white;
-        }
         #graphs {
             display: flex;
             flex-wrap: wrap;
@@ -428,7 +417,7 @@
             margin-bottom: 15px;
             color: #333;
         }
-        .table-annual {
+        .table-figures {
             margin-bottom: 30px;
         }
         .header-group {
@@ -500,7 +489,7 @@
                     this.byYear = this.byDay * 365.25;
                 }
 
-                this.info = `${Math.round(this.totalRaw*10)/10} ${this.unit}`;
+                this.info = `Total : ${Math.round(this.totalRaw*10)/10} ${this.unit}\nPar jour : ${Math.round(this.byDay*10)/10} ${this.unit}`;
             }
 
             add(metric) {
@@ -1280,7 +1269,7 @@
                 parent.appendChild(title);
 
                 const table = document.createElement('table');
-                table.className = 'table-annual';
+                table.className = 'table-figures';
 
                 // Header row 1: period label + group names spanning their columns
                 const thead = document.createElement('thead');
@@ -1593,7 +1582,7 @@
 
                 assertEquals(ds.months[0].metrics.heating.total, 21, "heating first month");
                 assertEquals(ds.months[0].metrics.heating.totalRaw, 21, "heating first month");
-                assertEquals(ds.months[0].metrics.heating.info, "21 kWh", "heating first month");
+                assertEquals(ds.months[0].metrics.heating.info, "Total : 21 kWh\nPar jour : 0.7 kWh", "heating first month");
                 assertEquals(ds.months[16].metrics.heating.total, 2, "heating last month");
                 assertEquals(ds.months[0].metrics.heating.samples, 1, "samples first month");
 
@@ -1634,8 +1623,8 @@
 
                 assertEquals(ds.months[0].metrics.wood_kg.total, 30, "wood raw");
                 assertEquals(ds.months[0].metrics.wood.total, 123, "wood total");
-                assertEquals(ds.months[0].metrics.wood_kg.info, "30 kg", "wood info");
-                assertEquals(ds.months[0].metrics.wood.info, "123 kWh", "wood info");
+                assertEquals(ds.months[0].metrics.wood_kg.info, "Total : 30 kg\nPar jour : 1 kg", "wood info");
+                assertEquals(ds.months[0].metrics.wood.info, "Total : 123 kWh\nPar jour : 4 kWh", "wood info");
 
                 assertEquals(ds.years[2024].metrics.dju.total, 8.5, "dju 2024");
                 assertEquals(ds.years[2025].metrics.dju.total, 60.1, "dju 2025");
@@ -1647,7 +1636,7 @@
                 assertEquals(ds.years[2025].metrics.wood_kg.total, 135, "wood totalRaw 2025");
                 assertEquals(ds.years[2025].metrics.wood.total, 135*4.1, "wood total 2025");
                 assertEquals(ds.years[2025].metrics.wood.samples, 12, "wood samples 2025");
-                assertEquals(ds.years[2025].metrics.wood_kg.info, "135 kg", "wood info 2025");
+                assertEquals(ds.years[2025].metrics.wood_kg.info, "Total : 135 kg\nPar jour : 0.4 kg", "wood info 2025");
 
                 assertEquals(ds.months[0].metrics.heating_forecast.total, 10.165, "heating forecast total");
                 assertEquals(ds.months[0].metrics.heating_forecast.samples, 1, "heating forecast samples");
