@@ -206,7 +206,6 @@
                 chauf_surface: {name: "Chauffage/surface", unit: "kWh/m²", type: "calc", formula: "chauf / surface"},
 
                 co2: {name: "CO₂", unit: "kg", type: "calc", formula: "total_elec*0.016"}, // 16g C02 par kWh -> https://www.edf.fr/groupe-edf/agir-pour-le-climat/responsabilite-societale-d-entreprise/rapports-et-indicateurs/emissions-de-gaz-a-effet-de-serre/nos-emissions-en-france-continentale
-                pers: {name: "Nombre de personnes", unit: "", type: "value"},
                 ecs_pers: {name: "ECS/pers", unit: "kWh", type: "calc", formula: "ecs_hc/pers"},
                 energie_surface: {name: "Élec/surface", unit: "kWh", type: "calc", formula: "(total_elec+bois)/surface"},
 
@@ -448,13 +447,12 @@
          * Some additional values are computed for convenience
          */
         class Metric {
-            constants; // prices, surface...
+            constants; // pers, surface...
             total; // current value of metric
             totalRaw; // raw value before conversion
             days; // number of days of aggregation
             samples; // number of samples
             info; // raw information, for tooltip
-            price; // prix en fonction du cours
             byDay; // per day
             byMonth;
             byYear;
@@ -465,7 +463,6 @@
                 this.total = 0;
                 this.days = 0;
                 this.samples = 0;
-                this.price = 0;
                 this.totalRaw = 0;
                 this.byDay = 0;
                 this.byMonth = 0;
@@ -498,7 +495,6 @@
                 this.totalRaw += metric.totalRaw;
                 this.days += metric.days;
                 this.samples += 1;
-                this.price += metric.price;
 
                 this.update();
             }
